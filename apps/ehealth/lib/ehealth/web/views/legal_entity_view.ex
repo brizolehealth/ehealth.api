@@ -25,6 +25,7 @@ defmodule EHealth.Web.LegalEntityView do
     is_active
     nhs_verified
     nhs_reviewed
+    nhs_comment
     mis_verified
     archive
     website
