@@ -55,7 +55,6 @@ defmodule GraphQL.Mixfile do
       {:plug_logger_json, "~> 0.5"},
       {:phoenix, "~> 1.4.0", override: true},
       {:plug_cowboy, "~> 2.0"},
-      {:taskafka, "~> 0.0.12"},
       {:white_bread, "~> 4.4", only: [:dev, :test]}
     ]
   end

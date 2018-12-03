@@ -53,7 +53,8 @@ defmodule Core.MixProject do
       {:timex, "~> 3.2"},
       {:translit, "~> 0.1.0"},
       {:mox, "~> 0.3", only: :test},
-      {:ex_machina, "~> 2.0", only: [:dev, :test]}
+      {:ex_machina, "~> 2.0", only: [:dev, :test]},
+      {:taskafka, git: "git@github.com:edenlabllc/taskafka.git", branch: "master"}
     ]
   end
 

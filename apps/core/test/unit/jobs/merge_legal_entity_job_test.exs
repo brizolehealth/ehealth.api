@@ -1,4 +1,4 @@
-defmodule GraphQL.Unit.LegalEntityMergeJobTest do
+defmodule Core.Unit.LegalEntityMergeJobTest do
   @moduledoc false
 
   use Core.ConnCase, async: false
@@ -11,7 +11,7 @@ defmodule GraphQL.Unit.LegalEntityMergeJobTest do
   alias Core.Employees
   alias Core.Employees.Employee
   alias Core.LegalEntities
-  alias GraphQL.Jobs.LegalEntityMergeJob
+  alias Core.Jobs.LegalEntityMergeJob
   alias TasKafka.Job
   alias TasKafka.Jobs
 

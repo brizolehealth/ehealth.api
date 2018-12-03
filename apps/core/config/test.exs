@@ -20,6 +20,9 @@ config :core,
   ],
   rpc_worker: RPCWorkerMock
 
+config :taskafka, :mongo, url: "mongodb://localhost:27017/taskafka_test"
+config :taskafka, :idle, true
+
 # Configures PRM API
 config :core, Core.API.PRM, endpoint: {:system, "PRM_ENDPOINT", "http://localhost:4040"}
 
