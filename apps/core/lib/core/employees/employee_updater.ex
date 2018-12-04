@@ -35,11 +35,11 @@ defmodule Core.Employees.EmployeeUpdater do
     end
   end
 
-  def do_deactivate(employee, reason, headers, user_id, skip_contracts_suspend) do
+  def do_deactivate(employee, reason, headers, user_id, skip_contracts_suspend?) do
     with active_employees <- get_active_employees(employee),
          :ok <- revoke_user_auth_data(employee, active_employees, headers),
          {:ok, _} <- @ops_api.terminate_employee_declarations(employee.id, user_id, reason, "", headers) do
-      set_employee_status_as_dismissed(employee, user_id, skip_contracts_suspend)
+      set_employee_status_as_dismissed(employee, user_id, skip_contracts_suspend?)
     end
   end
 
@@ -124,13 +124,13 @@ defmodule Core.Employees.EmployeeUpdater do
     end
   end
 
-  def set_employee_status_as_dismissed(%Employee{} = employee, user_id, skip_contracts_suspend) do
+  def set_employee_status_as_dismissed(%Employee{} = employee, user_id, skip_contracts_suspend?) do
     params =
       user_id
       |> get_deactivate_employee_params()
       |> put_employee_status(employee)
 
-    if employee.employee_type in [@type_owner, @type_admin] and !skip_contracts_suspend do
+    if employee.employee_type in [@type_owner, @type_admin] and !skip_contracts_suspend? do
       Employees.update_with_ops_contract(employee, params, user_id)
     else
       Employees.update(employee, params, user_id)

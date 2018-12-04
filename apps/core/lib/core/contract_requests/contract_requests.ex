@@ -357,9 +357,11 @@ defmodule Core.ContractRequests do
   def do_terminate(user_id, contract_request, params) do
     update_params =
       params
-      |> Map.put("status", CapitationContractRequest.status(:terminated))
-      |> Map.put("updated_by", user_id)
-      |> Map.put("end_date", Date.utc_today() |> Date.to_iso8601())
+      |> Map.merge(%{
+        "status" => CapitationContractRequest.status(:terminated),
+        "updated_by" => user_id,
+        "end_date" => Date.utc_today() |> Date.to_iso8601()
+      })
 
     update_result =
       contract_request

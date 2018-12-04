@@ -10,6 +10,7 @@ defmodule GraphQLWeb.LegalEntityDeactivationJobResolverTest do
   alias BSON.ObjectId
   alias Core.LegalEntities.LegalEntity
   alias Ecto.UUID
+  alias TasKafka.Job
   alias TasKafka.Jobs
 
   setup :verify_on_exit!
@@ -52,7 +53,13 @@ defmodule GraphQLWeb.LegalEntityDeactivationJobResolverTest do
         |> json_response(200)
         |> get_in(~w(data deactivateLegalEntity legalEntityDeactivationJob))
 
-      assert "PENDING" == job["status"]
+      pending_status =
+        :pending
+        |> Job.status()
+        |> Job.status_to_string()
+        |> String.upcase()
+
+      assert pending_status == job["status"]
       assert Map.has_key?(job, "endedAt")
       refute job["endedAt"]
 
@@ -71,7 +78,13 @@ defmodule GraphQLWeb.LegalEntityDeactivationJobResolverTest do
         }
       """
 
-      assert "PENDING" ==
+      pending_status =
+        :pending
+        |> Job.status()
+        |> Job.status_to_string()
+        |> String.upcase()
+
+      assert pending_status ==
                conn
                |> put_scope("legal_entity_deactivation_job:read")
                |> post_query(query, %{id: id})

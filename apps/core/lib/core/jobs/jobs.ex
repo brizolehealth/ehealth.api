@@ -15,7 +15,12 @@ defmodule Core.Jobs do
   def type(:legal_entity_deactivation), do: @legal_entity_deactivation_type
 
   def prepare_mongo_filter({:status, value}, acc) do
-    Map.put(acc, "status", value |> String.to_atom() |> Job.status())
+    status =
+      value
+      |> String.to_atom()
+      |> Job.status()
+
+    Map.put(acc, "status", status)
   end
 
   def prepare_mongo_filter({:legal_entity_id, value}, acc) do

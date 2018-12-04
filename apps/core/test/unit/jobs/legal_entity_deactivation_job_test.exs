@@ -2,6 +2,7 @@ defmodule Core.Unit.LegalEntityDeactivationJobTest do
   @moduledoc false
 
   use EHealth.Web.ConnCase, async: false
+  import Mox
   alias Core.ContractRequests
   alias Core.ContractRequests.RequestPack
   alias Core.ContractRequests.CapitationContractRequest
@@ -12,7 +13,6 @@ defmodule Core.Unit.LegalEntityDeactivationJobTest do
   alias Core.Jobs.LegalEntityDeactivationJob
   alias Core.LegalEntities
   alias Core.LegalEntities.LegalEntity
-  import Mox
 
   setup :verify_on_exit!
 

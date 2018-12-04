@@ -112,10 +112,14 @@ defmodule Core.Jobs.LegalEntityDeactivationJob do
       schema: "legal_entity",
       record: legal_entity
     }
-    |> List.wrap()
-    |> Kernel.++(get_employees_to_deactivate(legal_entity.id))
-    |> Kernel.++(get_contract_requests_to_deactivate(legal_entity.id))
-    |> Kernel.++(get_contracts_to_deactivate(legal_entity.id))
+    |> Enum.concat(
+      [
+        get_employees_to_deactivate(legal_entity.id),
+        get_contract_requests_to_deactivate(legal_entity.id),
+        get_contracts_to_deactivate(legal_entity.id)
+      ]
+    )
+    |> List.flatten()
   end
 
   def check_transition(%LegalEntity{is_active: true, status: @status_active}), do: :ok
@@ -127,21 +131,17 @@ defmodule Core.Jobs.LegalEntityDeactivationJob do
   defp get_employees_to_deactivate(legal_entity_id) do
     # TODO: add indexes
     Employee
+    |> select([e], %{schema: "employee", record: e})
     |> where([e], e.legal_entity_id == ^legal_entity_id)
     |> where([e], e.is_active)
     |> where([e], e.status == ^Employee.status(:approved))
     |> PRMRepo.all()
-    |> Enum.map(fn employee ->
-      %{
-        schema: "employee",
-        record: employee
-      }
-    end)
   end
 
   defp get_contract_requests_to_deactivate(legal_entity_id) do
     # TODO: add indexes
     CapitationContractRequest
+    |> select([cr], %{schema: "contract_request", record: cr})
     |> where([cr], cr.contractor_legal_entity_id == ^legal_entity_id)
     |> where(
       [cr],
@@ -154,33 +154,22 @@ defmodule Core.Jobs.LegalEntityDeactivationJob do
       ]
     )
     |> Repo.all()
-    |> Enum.map(fn capitation_contract_request ->
-      %{
-        schema: "contract_request",
-        record: capitation_contract_request
-      }
-    end)
   end
 
   defp get_contracts_to_deactivate(legal_entity_id) do
     # TODO: add indexes
     CapitationContract
+    |> select([c], %{schema: "contract", record: c})
     |> where([c], c.contractor_legal_entity_id == ^legal_entity_id)
     |> where([c], c.status == ^CapitationContract.status(:verified))
     |> PRMRepo.all()
-    |> Enum.map(fn contract ->
-      %{
-        schema: "contract",
-        record: contract
-      }
-    end)
   end
 
   def update_legal_entity_status(legal_entity, actor_id) do
     params =
       actor_id
       |> get_update_legal_entity_params()
-      |> put_legal_entity_status()
+      |> put_legal_entity_status(@status_closed)
 
     legal_entity
     |> LegalEntities.changeset(params)
@@ -194,5 +183,5 @@ defmodule Core.Jobs.LegalEntityDeactivationJob do
     }
   end
 
-  def put_legal_entity_status(params), do: Map.put(params, :status, @status_closed)
+  def put_legal_entity_status(params, status), do: Map.put(params, :status, status)
 end
