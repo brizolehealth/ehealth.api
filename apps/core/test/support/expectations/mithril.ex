@@ -18,14 +18,14 @@ defmodule Core.Expectations.Mithril do
   def get_client(n \\ 1) do
     expect(MithrilMock, :get_client, n, fn id, _ ->
       {:ok,
-       %{
-         "data" => %{
-           "id" => id,
-           "name" => "test",
-           "type" => "client",
-           "redirect_uri" => "http://example.com/redirect_uri"
-         }
-       }}
+        %{
+          "data" => %{
+            "id" => id,
+            "name" => "test",
+            "type" => "client",
+            "redirect_uri" => "http://example.com/redirect_uri"
+          }
+        }}
     end)
   end
 
@@ -74,13 +74,13 @@ defmodule Core.Expectations.Mithril do
   def get_user(n \\ 1) do
     expect(MithrilMock, :get_user_by_id, n, fn id, _ ->
       {:ok,
-       %{
-         "data" => %{
-           "id" => id,
-           "email" => "mis_bot_1493831618@user.com",
-           "type" => "user"
-         }
-       }}
+        %{
+          "data" => %{
+            "id" => id,
+            "email" => "mis_bot_1493831618@user.com",
+            "type" => "user"
+          }
+        }}
     end)
   end
 

@@ -364,8 +364,8 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_consumer_id_header(user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
+      end_date = Date.add(start_date, 30)
       expires_at = Date.to_iso8601(Date.add(start_date, 1))
 
       %{id: valid_id} = insert(:prm, :legal_entity)
@@ -387,7 +387,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> prepare_params(employee, expires_at)
         |> Map.put("contractor_owner_id", owner.id)
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 30)))
+        |> Map.put("end_date", Date.to_iso8601(end_date))
         |> Map.put("external_contractors", external_contractors)
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
@@ -575,12 +575,6 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"etag", resource}]}}
       end)
 
-      conn =
-        conn
-        |> put_client_id_header(legal_entity.id)
-        |> put_consumer_id_header(party_user.user_id)
-        |> put_req_header("drfo", legal_entity.edrpou)
-
       now = Date.utc_today()
       start_date = Date.add(now, 3650)
 
@@ -591,14 +585,16 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
-          "signed_content" => params |> Jason.encode!() |> Base.encode64(),
-          "signed_content_encoding" => "base64"
-        })
-
-      assert resp = json_response(conn, 422)
-      assert_error(resp, "$.start_date", "Start date must be within this or next year")
+      conn
+      |> put_client_id_header(legal_entity.id)
+      |> put_consumer_id_header(party_user.user_id)
+      |> put_req_header("drfo", legal_entity.edrpou)
+      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        "signed_content" => params |> Jason.encode!() |> Base.encode64(),
+        "signed_content_encoding" => "base64"
+      })
+      |> json_response(422)
+      |> assert_error("$.start_date", "Start date must be within this or next year")
     end
 
     test "invalid end_date", %{conn: conn} do
@@ -625,14 +621,13 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_consumer_id_header(party_user.user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
 
       params =
         division
         |> prepare_params(employee, Date.to_iso8601(Date.add(start_date, 1)))
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 365 * 3)))
+        |> Map.put("end_date", Date.to_iso8601(Date.add(start_date, 365 * 3)))
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
@@ -736,13 +731,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"ETag", Jason.encode!(resource)}]}}
       end)
 
-      conn =
-        conn
-        |> put_client_id_header(legal_entity.id)
-        |> put_consumer_id_header(user_id)
-        |> put_req_header("drfo", legal_entity.edrpou)
-
-      now = Date.utc_today()
+      now = contract_start_date()
       contract_request_start_date = Date.add(now, 1)
       contract_request_end_date = Date.add(contract_request_start_date, 10)
       expires_at = Date.to_iso8601(Date.add(contract_request_start_date, 1))
@@ -768,13 +757,17 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
+      resp =
+        conn
+        |> put_client_id_header(legal_entity.id)
+        |> put_consumer_id_header(user_id)
+        |> put_req_header("drfo", legal_entity.edrpou)
+        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
+        |> json_response(422)
 
-      assert resp = json_response(conn, 422)
       assert_error(resp, "Active contract is found. Contract number must be sent in request")
     end
 
@@ -802,12 +795,6 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"ETag", Jason.encode!(resource)}]}}
       end)
 
-      conn =
-        conn
-        |> put_client_id_header(legal_entity.id)
-        |> put_consumer_id_header(user_id)
-        |> put_req_header("drfo", legal_entity.edrpou)
-
       now = Date.utc_today()
       contract_request_start_date = Date.add(now, 1)
       contract_request_end_date = Date.add(contract_request_start_date, 10)
@@ -834,13 +821,17 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
+      resp =
+        conn
+        |> put_client_id_header(legal_entity.id)
+        |> put_consumer_id_header(user_id)
+        |> put_req_header("drfo", legal_entity.edrpou)
+        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
+        |> json_response(422)
 
-      assert resp = json_response(conn, 422)
       assert_error(resp, "Active contract is found. Contract number must be sent in request")
     end
 
@@ -867,12 +858,6 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       expect(MediaStorageMock, :verify_uploaded_file, 2, fn _, resource ->
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"ETag", Jason.encode!(resource)}]}}
       end)
-
-      conn =
-        conn
-        |> put_client_id_header(legal_entity.id)
-        |> put_consumer_id_header(user_id)
-        |> put_req_header("drfo", legal_entity.edrpou)
 
       now = Date.utc_today()
       contract_request_start_date = Date.add(now, 1)
@@ -903,15 +888,15 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
-          "signed_content" => params |> Jason.encode!() |> Base.encode64(),
-          "signed_content_encoding" => "base64"
-        })
-
-      assert resp = json_response(conn, 201)
-
-      resp
+      conn
+      |> put_client_id_header(legal_entity.id)
+      |> put_consumer_id_header(user_id)
+      |> put_req_header("drfo", legal_entity.edrpou)
+      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        "signed_content" => params |> Jason.encode!() |> Base.encode64(),
+        "signed_content_encoding" => "base64"
+      })
+      |> json_response(201)
       |> get_in(~w(data external_contractors))
       |> Enum.each(fn external_contractor ->
         legal_entity = Map.get(external_contractor, "legal_entity")
@@ -944,24 +929,24 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_consumer_id_header(party_user.user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
+      end_date = contract_start_date()
 
       params =
         division
         |> prepare_params(employee, Date.to_iso8601(Date.add(start_date, 1)))
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 30)))
+        |> Map.put("end_date", Date.to_iso8601(end_date))
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
+      resp =
+        conn
+        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
-
-      assert resp = json_response(conn, 422)
+        |> json_response(422)
 
       assert_error(
         resp,
@@ -990,14 +975,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"etag", resource}]}}
       end)
 
-      conn =
-        conn
-        |> put_client_id_header(legal_entity.id)
-        |> put_consumer_id_header(user_id)
-        |> put_req_header("drfo", legal_entity.edrpou)
-
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
 
       params =
         division
@@ -1005,20 +983,20 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> Map.put("contractor_owner_id", owner.id)
         |> Map.put("contract_number", "invalid")
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 30)))
+        |> Map.put("end_date", Date.to_iso8601(Date.add(start_date, 30)))
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
-      conn =
-        post(conn, contract_request_path(conn, :create, UUID.generate()), %{
-          "signed_content" => params |> Jason.encode!() |> Base.encode64(),
-          "signed_content_encoding" => "base64"
-        })
-
-      assert resp = json_response(conn, 422)
-
-      assert_error(
-        resp,
+      conn
+      |> put_client_id_header(legal_entity.id)
+      |> put_consumer_id_header(user_id)
+      |> put_req_header("drfo", legal_entity.edrpou)
+      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        "signed_content" => params |> Jason.encode!() |> Base.encode64(),
+        "signed_content_encoding" => "base64"
+      })
+      |> json_response(422)
+      |> assert_error(
         "$.contract_number",
         "string does not match pattern \"^\\\\d{4}-[\\\\dAEHKMPTX]{4}-[\\\\dAEHKMPTX]{4}$\"",
         "format"
@@ -1049,8 +1027,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         {:ok, %HTTPoison.Response{status_code: 200, headers: [{"ETag", Jason.encode!(resource)}]}}
       end)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
       contract_number = NumberGenerator.generate_from_sequence(1, 1)
 
       insert(
@@ -1122,15 +1099,14 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_consumer_id_header(user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
 
       params =
         division
         |> prepare_params(employee, Date.to_iso8601(Date.add(start_date, 1)))
         |> Map.put("contractor_owner_id", owner.id)
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 30)))
+        |> Map.put("end_date", Date.to_iso8601(Date.add(start_date, 30)))
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
 
@@ -1176,8 +1152,8 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_consumer_id_header(user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
+      end_date = Date.add(start_date, 30)
       expires_at = Date.to_iso8601(Date.add(start_date, 1))
 
       party_user_out = insert(:prm, :party_user)
@@ -1219,7 +1195,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> prepare_params(employee, expires_at)
         |> Map.put("contractor_owner_id", owner.id)
         |> Map.put("start_date", Date.to_iso8601(start_date))
-        |> Map.put("end_date", Date.to_iso8601(Date.add(now, 30)))
+        |> Map.put("end_date", Date.to_iso8601(end_date))
         |> Map.put("contractor_employee_divisions", contractor_employee_divisions)
 
       drfo_signed_content(params, legal_entity.edrpou, party_user.party.last_name)
@@ -1946,6 +1922,52 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       assert json_response(conn, 403)
     end
 
+    test "invalid user drfo in DS", %{conn: conn} do
+      expect(MithrilMock, :get_user_roles, fn _, _, _ ->
+        {:ok, %{"data" => [%{"role_name" => "OWNER"}]}}
+      end)
+
+      user_id = UUID.generate()
+      party_user = insert(:prm, :party_user, user_id: user_id)
+      legal_entity = insert(:prm, :legal_entity)
+      contract_request = insert(:il, :capitation_contract_request, contractor_legal_entity_id: legal_entity.id)
+
+      conn =
+        conn
+        |> put_consumer_id_header(user_id)
+        |> put_client_id_header(legal_entity.id)
+        |> put_req_header("drfo", legal_entity.edrpou)
+
+      data = %{
+        "id" => contract_request.id,
+        "next_status" => "APPROVED",
+        "contractor_legal_entity" => %{
+          "id" => contract_request.contractor_legal_entity_id,
+          "name" => legal_entity.name,
+          "edrpou" => legal_entity.edrpou
+        },
+        "text" => "something"
+      }
+
+      drfo_signed_content(data, legal_entity.edrpou, party_user.party.last_name)
+
+      resp =
+        conn
+        |> patch(contract_request_path(conn, :approve, @capitation, contract_request.id), %{
+          "signed_content" => data |> Jason.encode!() |> Base.encode64(),
+          "signed_content_encoding" => "base64"
+        })
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{"entry_type" => "request", "rules" => [%{"rule" => "json"}]}
+               ],
+               "message" => "Does not match the signer drfo",
+               "type" => "request_malformed"
+             } = resp["error"]
+    end
+
     test "no contract_request found", %{conn: conn} do
       expect(MithrilMock, :get_user_roles, fn _, _, _ ->
         {:ok, %{"data" => [%{"role_name" => "NHS ADMIN SIGNER"}]}}
@@ -2668,8 +2690,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       employee_doctor = insert(:prm, :employee, legal_entity_id: legal_entity.id, division: division)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
 
       contract_request =
         insert(
@@ -2754,8 +2775,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       employee_doctor = insert(:prm, :employee, legal_entity_id: legal_entity.id, division: division)
 
-      now = Date.utc_today()
-      start_date = Date.add(now, 10)
+      start_date = contract_start_date()
 
       contract_request =
         insert(
@@ -4741,6 +4761,8 @@ defmodule EHealth.Web.ContractRequestControllerTest do
   defp prepare_params(division, employee, expires_at \\ nil) do
     %{id: external_legal_entity_id} = insert(:prm, :legal_entity)
 
+    expires_at = expires_at || Date.utc_today() |> Date.add(10) |> Date.to_iso8601()
+
     %{
       "contractor_owner_id" => UUID.generate(),
       "contractor_base" => "на підставі закону про Медичне обслуговування населення",
@@ -4823,8 +4845,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         employee_type: Employee.type(:owner)
       )
 
-    now = Date.utc_today()
-    start_date = Date.add(now, 10)
+    start_date = contract_start_date()
 
     params =
       Keyword.merge(
@@ -4887,5 +4908,14 @@ defmodule EHealth.Web.ContractRequestControllerTest do
                }
              ]
            } = resp["error"]
+  end
+
+  defp contract_start_date() do
+    today = Date.utc_today()
+
+    case today.month do
+      12 -> Date.add(today, 31)
+      _ -> today
+    end
   end
 end
