@@ -91,6 +91,8 @@ defmodule GraphQLWeb.Resolvers.ContractRequestResolver do
   def get_attached_documents(%{id: id, status: status}, _, _) do
     with documents when is_list(documents) <- ContractRequests.gen_relevant_get_links(id, status) do
       {:ok, documents}
+    else
+      err -> render_error(err)
     end
   end
 
@@ -137,6 +139,8 @@ defmodule GraphQLWeb.Resolvers.ContractRequestResolver do
         |> Map.put(:printout_content, printout_content)
 
       {:ok, to_sign_content}
+    else
+      err -> render_error(err)
     end
   end
 
