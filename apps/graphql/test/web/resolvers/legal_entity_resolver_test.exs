@@ -924,6 +924,8 @@ defmodule GraphQLWeb.LegalEntityResolverTest do
         |> json_response(200)
 
       resp_entity = get_in(resp_body, ~w(data nhsReviewLegalEntity legalEntity))
+
+      refute resp_entity
       assert "CONFLICT" == hd(resp_body["errors"])["extensions"]["code"]
     end
 
@@ -938,6 +940,8 @@ defmodule GraphQLWeb.LegalEntityResolverTest do
         |> json_response(200)
 
       resp_entity = get_in(resp_body, ~w(data nhsReviewLegalEntity legalEntity))
+
+      refute resp_entity
       assert "CONFLICT" == hd(resp_body["errors"])["extensions"]["code"]
     end
 

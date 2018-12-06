@@ -5,11 +5,11 @@ defmodule GraphQLWeb.Schema.CapitationContractRequestTypes do
   use Absinthe.Relay.Schema.Notation, :modern
 
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
   import GraphQLWeb.Resolvers.Helpers.Load, only: [load_by_args: 2, load_by_parent: 2, load_by_parent: 3]
 
   alias Absinthe.Relay.Node.ParseIDs
   alias Core.ContractRequests.CapitationContractRequest
-  alias Core.Contracts.CapitationContract
   alias Core.Divisions.Division
   alias Core.Employees.Employee
   alias Core.LegalEntities.LegalEntity
@@ -27,7 +27,7 @@ defmodule GraphQLWeb.Schema.CapitationContractRequestTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&CapitationContractRequestResolver.list_contract_requests/2)
+      resolve(safe(&CapitationContractRequestResolver.list_contract_requests/2))
     end
 
     field :capitation_contract_request, :capitation_contract_request do
@@ -89,7 +89,7 @@ defmodule GraphQLWeb.Schema.CapitationContractRequestTypes do
     field(:status, non_null(:contract_request_status))
     field(:status_reason, :string)
     field(:issue_city, :string)
-    field(:printout_content, :string, resolve: &ContractRequestResolver.get_printout_content/3)
+    field(:printout_content, :string, resolve: safe(&ContractRequestResolver.get_printout_content/3))
     field(:start_date, non_null(:date))
     field(:end_date, non_null(:date))
     field(:contractor_legal_entity, non_null(:legal_entity), resolve: load_by_parent(PRM, LegalEntity))
@@ -108,14 +108,14 @@ defmodule GraphQLWeb.Schema.CapitationContractRequestTypes do
     field(:nhs_payment_method, :nhs_payment_method)
     field(:miscellaneous, :string, resolve: fn _, res -> {:ok, res.source.misc} end)
 
-    field(:to_approve_content, :json, resolve: &ContractRequestResolver.get_to_approve_content/3)
-    field(:to_decline_content, :json, resolve: &ContractRequestResolver.get_to_decline_content/3)
-    field(:to_sign_content, :json, resolve: &ContractRequestResolver.get_to_sign_content/3)
+    field(:to_approve_content, :json, resolve: safe(&ContractRequestResolver.get_to_approve_content/3))
+    field(:to_decline_content, :json, resolve: safe(&ContractRequestResolver.get_to_decline_content/3))
+    field(:to_sign_content, :json, resolve: safe(&ContractRequestResolver.get_to_sign_content/3))
 
     field(
       :attached_documents,
       non_null(list_of(:contract_document)),
-      resolve: &ContractRequestResolver.get_attached_documents/3
+      resolve: safe(&ContractRequestResolver.get_attached_documents/3)
     )
 
     # TODO: Timestamp fields should return :datetime type

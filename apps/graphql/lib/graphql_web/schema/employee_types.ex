@@ -5,6 +5,7 @@ defmodule GraphQLWeb.Schema.EmployeeTypes do
   use Absinthe.Relay.Schema.Notation, :modern
 
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
   import GraphQLWeb.Resolvers.Helpers.Load, only: [load_by_args: 2]
 
   alias Absinthe.Relay.Node.ParseIDs
@@ -36,7 +37,7 @@ defmodule GraphQLWeb.Schema.EmployeeTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&EmployeeResolver.list_employees/2)
+      resolve(safe(&EmployeeResolver.list_employees/2))
     end
 
     field :employee, :employee do

@@ -145,4 +145,20 @@ defmodule GraphQLWeb.Resolvers.Helpers.Errors do
   defp create_validation_error(field, rule, description) do
     %{"#{field}" => %{"description" => description, "rule" => to_string(rule)}}
   end
+
+  def safe(function) when is_function(function, 2) do
+    fn args, resolution -> do_apply(function, [args, resolution]) end
+  end
+
+  def safe(function) when is_function(function, 3) do
+    fn parent, args, resolution -> do_apply(function, [parent, args, resolution]) end
+  end
+
+  defp do_apply(function, params) do
+    apply(function, params)
+  rescue
+    error ->
+      Log.error(%{"message" => "An exception was raised: #{inspect(error)}"})
+      {:error, Exception.message(error)}
+  end
 end

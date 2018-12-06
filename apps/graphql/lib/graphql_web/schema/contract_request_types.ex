@@ -4,6 +4,8 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
 
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
+
   alias Absinthe.Relay.Node.ParseIDs
   alias Core.ContractRequests.CapitationContractRequest
   alias Core.ContractRequests.ReimbursementContractRequest
@@ -44,7 +46,7 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
         field(:contract_request, :contract_request)
       end
 
-      resolve(&ContractRequestResolver.update/2)
+      resolve(safe(&ContractRequestResolver.update/2))
     end
 
     payload field(:approve_contract_request) do
@@ -60,7 +62,7 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
         field(:contract_request, :contract_request)
       end
 
-      resolve(&ContractRequestResolver.approve/2)
+      resolve(safe(&ContractRequestResolver.approve/2))
     end
 
     payload field(:decline_contract_request) do
@@ -76,7 +78,7 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
         field(:contract_request, :contract_request)
       end
 
-      resolve(&ContractRequestResolver.decline/2)
+      resolve(safe(&ContractRequestResolver.decline/2))
     end
 
     payload field(:assign_contract_request) do
@@ -93,7 +95,7 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
         field(:contract_request, :contract_request)
       end
 
-      resolve(&ContractRequestResolver.update_assignee/2)
+      resolve(safe(&ContractRequestResolver.update_assignee/2))
     end
 
     payload field(:sign_contract_request) do
@@ -112,7 +114,7 @@ defmodule GraphQLWeb.Schema.ContractRequestTypes do
         field(:contract_request, :contract_request)
       end
 
-      resolve(&ContractRequestResolver.sign/2)
+      resolve(safe(&ContractRequestResolver.sign/2))
     end
   end
 

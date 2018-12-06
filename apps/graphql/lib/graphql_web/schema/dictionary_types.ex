@@ -4,6 +4,8 @@ defmodule GraphQLWeb.Schema.DictionaryTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
 
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
+
   alias Absinthe.Relay.Node.ParseIDs
   alias GraphQLWeb.Resolvers.DictionaryResolver
 
@@ -13,7 +15,7 @@ defmodule GraphQLWeb.Schema.DictionaryTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&DictionaryResolver.list_dictionaries/2)
+      resolve(safe(&DictionaryResolver.list_dictionaries/2))
     end
   end
 
@@ -44,7 +46,7 @@ defmodule GraphQLWeb.Schema.DictionaryTypes do
         field(:dictionary, :dictionary)
       end
 
-      resolve(&DictionaryResolver.update/2)
+      resolve(safe(&DictionaryResolver.update/2))
     end
   end
 

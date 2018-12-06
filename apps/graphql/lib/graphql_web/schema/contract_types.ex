@@ -5,6 +5,7 @@ defmodule GraphQLWeb.Schema.ContractTypes do
   use Absinthe.Relay.Schema.Notation, :modern
 
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
   import GraphQLWeb.Resolvers.Helpers.Load, only: [load_by_args: 2, load_by_parent: 2]
 
   alias Absinthe.Relay.Node.ParseIDs
@@ -28,7 +29,7 @@ defmodule GraphQLWeb.Schema.ContractTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&ContractResolver.list_contracts/2)
+      resolve(safe(&ContractResolver.list_contracts/2))
     end
 
     field :contract, :contract do
@@ -110,7 +111,7 @@ defmodule GraphQLWeb.Schema.ContractTypes do
       end
 
       middleware(ParseIDs, id: :contract)
-      resolve(&ContractResolver.terminate/2)
+      resolve(safe(&ContractResolver.terminate/2))
     end
 
     payload field(:prolongate_contract) do
@@ -128,7 +129,7 @@ defmodule GraphQLWeb.Schema.ContractTypes do
       end
 
       middleware(ParseIDs, id: :contract)
-      resolve(&ContractResolver.prolongate/2)
+      resolve(safe(&ContractResolver.prolongate/2))
     end
   end
 
@@ -176,7 +177,7 @@ defmodule GraphQLWeb.Schema.ContractTypes do
     field(:nhs_signer_base, :string)
     field(:nhs_contract_price, :float)
     field(:nhs_payment_method, :nhs_payment_method)
-    field(:attached_documents, list_of(:contract_document), resolve: &ContractResolver.get_attached_documents/3)
+    field(:attached_documents, list_of(:contract_document), resolve: safe(&ContractResolver.get_attached_documents/3))
     field(:parent_contract, :contract, resolve: dataloader(PRM))
     field(:contract_request, :contract_request, resolve: load_by_parent(IL, CapitationContractRequest))
 

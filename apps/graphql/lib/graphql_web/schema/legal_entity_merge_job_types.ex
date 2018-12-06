@@ -4,6 +4,8 @@ defmodule GraphQLWeb.Schema.LegalEntityMergeJobTypes do
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
 
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
+
   alias Absinthe.Relay.Node.ParseIDs
   alias GraphQLWeb.Resolvers.LegalEntityMergeJobResolver
 
@@ -17,7 +19,7 @@ defmodule GraphQLWeb.Schema.LegalEntityMergeJobTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&LegalEntityMergeJobResolver.list_jobs/2)
+      resolve(safe(&LegalEntityMergeJobResolver.list_jobs/2))
     end
 
     @desc "get one Legal Entity merge job by id"
@@ -27,7 +29,7 @@ defmodule GraphQLWeb.Schema.LegalEntityMergeJobTypes do
       arg(:id, non_null(:id))
 
       middleware(ParseIDs, id: :legal_entity_merge_job)
-      resolve(&LegalEntityMergeJobResolver.get_by_id/3)
+      resolve(safe(&LegalEntityMergeJobResolver.get_by_id/3))
     end
   end
 
@@ -43,7 +45,7 @@ defmodule GraphQLWeb.Schema.LegalEntityMergeJobTypes do
         field(:legal_entity_merge_job, :legal_entity_merge_job)
       end
 
-      resolve(&LegalEntityMergeJobResolver.merge_legal_entities/2)
+      resolve(safe(&LegalEntityMergeJobResolver.merge_legal_entities/2))
     end
   end
 

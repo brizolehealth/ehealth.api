@@ -5,6 +5,7 @@ defmodule GraphQLWeb.Schema.LegalEntityTypes do
   use Absinthe.Relay.Schema.Notation, :modern
 
   import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [safe: 1]
 
   alias Absinthe.Relay.Node.ParseIDs
   alias GraphQLWeb.Loaders.PRM
@@ -20,7 +21,7 @@ defmodule GraphQLWeb.Schema.LegalEntityTypes do
 
       # TODO: Replace it with `GraphQLWeb.Middleware.Filtering`
       middleware(GraphQLWeb.Middleware.FilterArgument)
-      resolve(&LegalEntityResolver.list_legal_entities/2)
+      resolve(safe(&LegalEntityResolver.list_legal_entities/2))
     end
 
     @desc "get one Legal Entity by id"
@@ -30,7 +31,7 @@ defmodule GraphQLWeb.Schema.LegalEntityTypes do
       arg(:id, non_null(:id))
 
       middleware(ParseIDs, id: :legal_entity)
-      resolve(&LegalEntityResolver.get_legal_entity_by_id/3)
+      resolve(safe(&LegalEntityResolver.get_legal_entity_by_id/3))
     end
   end
 
