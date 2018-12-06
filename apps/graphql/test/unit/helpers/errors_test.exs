@@ -3,7 +3,8 @@ defmodule GraphQL.Unit.Helpers.ErrorsTest do
 
   use Core.ConnCase, async: true
 
-  import GraphQLWeb.Resolvers.Helpers.Errors, only: [render_error: 1]
+  import GraphQLWeb.Resolvers.Helpers.Errors, only: [render_error: 1, safe: 1]
+  import ExUnit.CaptureLog
 
   alias Core.ValidationError
   alias Core.Validators.JsonSchema
@@ -90,6 +91,21 @@ defmodule GraphQL.Unit.Helpers.ErrorsTest do
                extensions: %{code: "UNPROCESSABLE_ENTITY"},
                message: "Validation error"
              } == error
+    end
+  end
+
+  describe "handle exeptions from resolver function" do
+    test "success" do
+      function_arity_2 = fn _, _ -> raise "exception" end
+      function_arity_3 = fn _, _, _ -> raise "exception" end
+
+      log =
+        capture_log(fn ->
+          assert {:error, "exception"} == safe(function_arity_2).(nil, nil)
+          assert {:error, "exception"} == safe(function_arity_3).(nil, nil, nil)
+        end)
+
+      assert String.contains?(log, "An exception was raised: %RuntimeError")
     end
   end
 
