@@ -159,6 +159,6 @@ defmodule GraphQLWeb.Resolvers.Helpers.Errors do
   rescue
     error ->
       Log.error(%{"message" => "An exception was raised: #{inspect(error)}"})
-      {:error, Exception.message(error)}
+      {:error, "Something went wrong"}
   end
 end
