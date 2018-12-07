@@ -3,13 +3,15 @@ defmodule Core.Expectations.Mithril do
 
   import Mox
 
+  alias Ecto.UUID
+
   def mis(n \\ 1), do: get_client_type_name("MIS", n)
   def nhs(n \\ 1), do: get_client_type_name("NHS", n)
   def msp(n \\ 1), do: get_client_type_name("MSP", n)
   def cabinet(n \\ 1), do: get_client_type_name("CABINET", n)
   defdelegate admin(n \\ 1), to: __MODULE__, as: :nhs
 
-  defp get_client_type_name(type, n) do
+  def get_client_type_name(type, n \\ 1) do
     expect(MithrilMock, :get_client_type_name, n, fn _, _ -> {:ok, type} end)
   end
 
@@ -79,6 +81,48 @@ defmodule Core.Expectations.Mithril do
            "type" => "user"
          }
        }}
+    end)
+  end
+
+  def get_roles_by_name(n \\ 1, id \\ UUID.generate()) do
+    expect(MithrilMock, :get_roles_by_name, n, fn _, _ ->
+      {:ok, %{"data" => [%{"id" => id}]}}
+    end)
+  end
+
+  def get_user_roles(n \\ 1) do
+    expect(MithrilMock, :get_user_roles, n, fn _, _, _ ->
+      {:ok, %{"data" => []}}
+    end)
+  end
+
+  def create_user_role(n \\ 1) do
+    expect(MithrilMock, :create_user_role, n, fn _, _, _ ->
+      {:ok, %{"data" => %{}}}
+    end)
+  end
+
+  def get_client_type_by_name(n \\ 1, id \\ UUID.generate()) do
+    expect(MithrilMock, :get_client_type_by_name, n, fn _, _ ->
+      {:ok, %{"data" => [%{"id" => id}]}}
+    end)
+  end
+
+  def delete_user_roles_by_user_and_role_name(n \\ 1, id \\ UUID.generate()) do
+    expect(MithrilMock, :delete_user_roles_by_user_and_role_name, n, fn _, _, _ ->
+      {:ok, %{"data" => [%{"id" => id}]}}
+    end)
+  end
+
+  def delete_apps_by_user_and_client(n \\ 1, id \\ UUID.generate()) do
+    expect(MithrilMock, :delete_apps_by_user_and_client, n, fn _, _, _ ->
+      {:ok, %{"data" => [%{"id" => id}]}}
+    end)
+  end
+
+  def delete_tokens_by_user_and_client(n \\ 1, id \\ UUID.generate()) do
+    expect(MithrilMock, :delete_tokens_by_user_and_client, n, fn _, _, _ ->
+      {:ok, %{"data" => [%{"id" => id}]}}
     end)
   end
 end
