@@ -64,6 +64,7 @@ defmodule Core.MixProject do
         "ecto.create --repo Core.PRMRepo",
         "ecto.create --repo Core.EventManagerRepo",
         "ecto.migrate",
+        "run priv/repo/seeds.exs"
       ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: [
