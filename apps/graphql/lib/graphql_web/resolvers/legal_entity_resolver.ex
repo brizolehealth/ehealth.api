@@ -118,6 +118,7 @@ defmodule GraphQLWeb.Resolvers.LegalEntityResolver do
     else
       err -> render_error(err)
     end
+  end
 
   def deactivate(%{id: id}, %{context: context}) do
     with {:ok, legal_entity} <- LegalEntityUpdater.deactivate(id, context.headers, true) do
