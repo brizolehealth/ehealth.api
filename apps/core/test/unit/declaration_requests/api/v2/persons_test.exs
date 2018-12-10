@@ -5,6 +5,35 @@ defmodule Core.DeclarationRequests.API.V2.PersonsTest do
   alias Core.DeclarationRequests.API.V2.Persons
 
   describe "v2 child search params" do
+    test "tax_id and invalid birth certificate" do
+      assert {:error, {:"422", "BIRTH CERTIFICATE should contain digits"}} ==
+               Persons.get_search_params(%{
+                 "tax_id" => "0123456789",
+                 "birth_date" => "2018-12-10",
+                 "last_name" => "Нечуй Левицький",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР тридцять один"
+                   }
+                 ]
+               })
+    end
+
+    test "no tax_id and invalid birth certificate" do
+      assert {:error, {:"422", "BIRTH CERTIFICATE should contain digits"}} ==
+               Persons.get_search_params(%{
+                 "birth_date" => "2018-12-10",
+                 "last_name" => "Нечуй Левицький",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР тридцять один"
+                   }
+                 ]
+               })
+    end
+
     test "tax_id" do
       assert {:ok,
               [

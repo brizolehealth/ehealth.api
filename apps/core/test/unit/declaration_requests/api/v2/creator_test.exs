@@ -72,7 +72,13 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
                Creator.mpi_search(%{
                  "birth_date" => "2016-08-28",
                  "tax_id" => "0123456789",
-                 "last_name" => "Рюрікович"
+                 "last_name" => "Рюрікович",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                   }
+                 ]
                })
     end
 
@@ -163,7 +169,13 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
                  "unzr" => "20160828-12345",
                  "birth_date" => "2016-08-28",
                  "tax_id" => "0123456789",
-                 "last_name" => "Рюрікович"
+                 "last_name" => "Рюрікович",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                   }
+                 ]
                })
     end
 
@@ -179,7 +191,13 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
         "unzr" => "20160303-12345",
         "birth_date" => "2016-03-03",
         "tax_id" => "0123456789",
-        "last_name" => "Рюрікович"
+        "last_name" => "Рюрікович",
+        "documents" => [
+          %{
+            "type" => "BIRTH_CERTIFICATE",
+            "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+          }
+        ]
       }
 
       assert {:ok, %{id: 1}} = Creator.mpi_search(person)
@@ -198,7 +216,13 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
                  "unzr" => "20190101-12345",
                  "birth_date" => "2019-01-01",
                  "tax_id" => "1234567890",
-                 "last_name" => "Рюрікович"
+                 "last_name" => "Рюрікович",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                   }
+                 ]
                })
     end
   end

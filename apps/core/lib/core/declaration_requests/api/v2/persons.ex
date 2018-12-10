@@ -11,13 +11,19 @@ defmodule Core.DeclarationRequests.API.V2.Persons do
         _, acc -> {:cont, acc}
       end)
 
-    %{
-      "type" => "BIRTH_CERTIFICATE",
-      "digits" => Regex.replace(~r/[^0-9]/iu, number, ""),
-      "birth_date" => person["birth_date"],
-      "last_name" => person["last_name"] |> String.replace(~r{\s+}, "") |> String.downcase(),
-      "status" => @person_active
-    }
+    digits = Regex.replace(~r/[^0-9]/iu, number, "")
+
+    if digits != "",
+      do:
+        {:ok,
+         %{
+           "type" => "BIRTH_CERTIFICATE",
+           "digits" => Regex.replace(~r/[^0-9]/iu, number, ""),
+           "birth_date" => person["birth_date"],
+           "last_name" => person["last_name"] |> String.replace(~r{\s+}, "") |> String.downcase(),
+           "status" => @person_active
+         }},
+      else: {:error, {:"422", "BIRTH CERTIFICATE should contain digits"}}
   end
 
   def adult_document_search_params(person) do
@@ -44,24 +50,26 @@ defmodule Core.DeclarationRequests.API.V2.Persons do
       "status" => @person_active
     }
 
-    search_params =
-      cond do
-        age < 14 && tax_id && birth_date ->
-          [
-            birth_date_tax_id_params,
-            child_document_search_params(person_data)
-          ]
+    cond do
+      age < 14 && tax_id && birth_date ->
+        with {:ok, birth_certificate_number_params} <- child_document_search_params(person_data) do
+          {:ok,
+           [
+             birth_date_tax_id_params,
+             birth_certificate_number_params
+           ]}
+        end
 
-        age < 14 ->
-          [child_document_search_params(person_data)]
+      age < 14 ->
+        with {:ok, birth_certificate_number_params} <- child_document_search_params(person_data) do
+          {:ok, [birth_certificate_number_params]}
+        end
 
-        age > 14 && tax_id && birth_date ->
-          [birth_date_tax_id_params]
+      age > 14 && tax_id && birth_date ->
+        {:ok, [birth_date_tax_id_params]}
 
-        age > 14 ->
-          [adult_document_search_params(person_data)]
-      end
-
-    {:ok, search_params}
+      age > 14 ->
+        {:ok, [adult_document_search_params(person_data)]}
+    end
   end
 end
