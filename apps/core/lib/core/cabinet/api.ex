@@ -7,7 +7,7 @@ defmodule Core.Cabinet.API do
   alias Core.Bamboo.Emails.Sender
   alias Core.Cabinet.Requests.Registration
   alias Core.Cabinet.Requests.UserSearch
-  alias Core.DeclarationRequests.API.V1.Persons
+  alias Core.DeclarationRequests.API.V2.Persons
   alias Core.DeclarationRequests.API.V2.MpiSearch
   alias Core.Guardian
   alias Core.Man.Templates.EmailVerification
@@ -45,12 +45,7 @@ defmodule Core.Cabinet.API do
          :ok <- validate_first_name(content, signer),
          :ok <- validate_last_name(content, signer),
          :ok <- validate_email(content, email),
-         {:ok, search_params} <-
-           Persons.get_search_params(%{
-             "tax_id" => tax_id,
-             "birth_date" => content["birth_date"],
-             "unzr" => content["unzr"]
-           }),
+         {:ok, search_params} <- Persons.get_search_params(content),
          {:ok, mpi_response} <- MpiSearch.search(search_params),
          {:ok, %{"data" => user_data}} <- @mithril_api.search_user(%{email: email}, headers),
          mithril_user <- fetch_mithril_user(user_data),

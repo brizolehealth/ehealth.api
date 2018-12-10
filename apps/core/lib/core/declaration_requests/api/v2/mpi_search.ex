@@ -3,8 +3,6 @@ defmodule Core.DeclarationRequests.API.V2.MpiSearch do
   Provides mpi search
   """
 
-  alias Core.DeclarationRequests.API.V1.Persons
-
   @mpi_api Application.get_env(:core, :api_resolvers)[:mpi]
 
   def search(%{"auth_phone_number" => _} = search_params) do
@@ -13,15 +11,16 @@ defmodule Core.DeclarationRequests.API.V2.MpiSearch do
     |> search_result(:all)
   end
 
-  def search(person, headers \\ []) do
-    with {:ok, search_params} <- Persons.get_search_params(person) do
-      search_params
-      |> @mpi_api.search(headers)
-      |> search_result(:one)
-    else
-      {:error, :ignore} -> {:ok, nil}
-      err -> err
-    end
+  def search(person_search_params, headers \\ []) when is_list(person_search_params) do
+    Enum.reduce_while(person_search_params, {:ok, nil}, fn search_params_set, acc ->
+      case search_params_set
+           |> @mpi_api.search(headers)
+           |> search_result(:one) do
+        {:ok, nil} -> {:cont, acc}
+        {:ok, person} -> {:halt, {:ok, person}}
+        err -> {:halt, err}
+      end
+    end)
   end
 
   defp search_result({:ok, %{"data" => data}}, :all), do: {:ok, data}

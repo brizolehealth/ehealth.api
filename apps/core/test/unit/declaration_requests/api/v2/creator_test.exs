@@ -69,7 +69,12 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
       end)
 
       assert {:ok, %{id: 1}} =
-               Creator.mpi_search(%{"unzr" => "20160828-12345", "birth_date" => "2016-08-28", "tax_id" => "0123456789"})
+               Creator.mpi_search(%{
+                 "unzr" => "20160828-12345",
+                 "birth_date" => "2016-08-28",
+                 "tax_id" => "0123456789",
+                 "last_name" => "Рюрікович"
+               })
     end
 
     test "one mpi persons" do
@@ -80,13 +85,18 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
          }}
       end)
 
-      person = %{"unzr" => "20160303-12345", "birth_date" => "2016-03-03", "tax_id" => "0123456789"}
+      person = %{
+        "unzr" => "20160303-12345",
+        "birth_date" => "2016-03-03",
+        "tax_id" => "0123456789",
+        "last_name" => "Рюрікович"
+      }
 
       assert {:ok, %{id: 1}} = Creator.mpi_search(person)
     end
 
     test "no mpi persons" do
-      expect(MPIMock, :search, fn _, _ ->
+      expect(MPIMock, :search, 2, fn _, _ ->
         {:ok,
          %{
            "data" => []
@@ -94,7 +104,12 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
       end)
 
       assert {:ok, nil} =
-               Creator.mpi_search(%{"unzr" => "20190101-12345", "birth_date" => "2019-01-01", "tax_id" => "1234567890"})
+               Creator.mpi_search(%{
+                 "unzr" => "20190101-12345",
+                 "birth_date" => "2019-01-01",
+                 "tax_id" => "1234567890",
+                 "last_name" => "Рюрікович"
+               })
     end
   end
 

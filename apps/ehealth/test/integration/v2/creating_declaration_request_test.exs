@@ -331,7 +331,7 @@ defmodule EHealth.Integration.V2.DeclarationRequestCreateTest do
 
       gen_sequence_number()
 
-      expect(MPIMock, :search, fn _, _ ->
+      expect(MPIMock, :search, 2, fn _, _ ->
         {:ok,
          %{
            "data" => []
@@ -711,7 +711,7 @@ defmodule EHealth.Integration.V2.DeclarationRequestCreateTest do
     test "declaration request is created with 'OTP' verification for person with no_tax_id = true", %{conn: conn} do
       gen_sequence_number()
 
-      expect(MPIMock, :search, fn _, _ ->
+      expect(MPIMock, :search, 2, fn _, _ ->
         {:ok,
          %{
            "data" => []
@@ -890,6 +890,13 @@ defmodule EHealth.Integration.V2.DeclarationRequestCreateTest do
       template()
 
       gen_sequence_number()
+
+      expect(MPIMock, :search, fn _params, _ ->
+        {:ok,
+         %{
+           "data" => []
+         }}
+      end)
 
       expect(MediaStorageMock, :create_signed_url, 4, fn _, _, resource_name, resource_id, _ ->
         {:ok, %{"data" => %{"secret_url" => "http://a.link.for/#{resource_id}/#{resource_name}"}}}
@@ -1085,7 +1092,7 @@ defmodule EHealth.Integration.V2.DeclarationRequestCreateTest do
     test "declaration request is created without verification", %{conn: conn} do
       gen_sequence_number()
 
-      expect(MPIMock, :search, 2, fn _, _ ->
+      expect(MPIMock, :search, 3, fn _, _ ->
         {:ok, %{"data" => []}}
       end)
 

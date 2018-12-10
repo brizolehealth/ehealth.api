@@ -1,4 +1,4 @@
-defmodule Core.DeclarationRequests.API.V1.Persons do
+defmodule Core.DeclarationRequests.API.V2.Persons do
   @moduledoc false
 
   @person_active "active"
@@ -11,21 +11,24 @@ defmodule Core.DeclarationRequests.API.V1.Persons do
         _, acc -> {:cont, acc}
       end)
 
-    [
-      %{
-        "birth_date" => person["birth_date"],
-        "tax_id" => person["tax_id"]
-      },
-      %{
-        "type" => "BIRTH_CERTIFICATE",
-        "digits" => Regex.replace(~r/[^0-9]/iu, number, ""),
-        "birth_date" => person["birth_date"],
-        "last_name" => String.replace(person["last_name"], ~r{\s+}, "")
-      }
-    ]
+    %{
+      "type" => "BIRTH_CERTIFICATE",
+      "digits" => Regex.replace(~r/[^0-9]/iu, number, ""),
+      "birth_date" => person["birth_date"],
+      "last_name" => person["last_name"] |> String.replace(~r{\s+}, "") |> String.downcase()
+    }
   end
 
   def adult_document_search_params(person) do
+    documents =
+      person
+      |> Map.get("documents", [])
+      |> Enum.map(fn
+        %{"type" => type, "number" => number} ->
+          %{"type" => type, "number" => number |> String.downcase() |> Translit.translit(), "status" => @person_active}
+      end)
+
+    %{"documents" => documents, "status" => @person_active}
   end
 
   def get_search_params(person_data) do
@@ -34,13 +37,30 @@ defmodule Core.DeclarationRequests.API.V1.Persons do
 
     age = Timex.diff(Timex.now(), Date.from_iso8601!(birth_date), :years)
 
-    cond do
-      age < 14 && tax_id && birth_date ->
-        child_document_search_params(person_data)
-    end
-    |> put_search_params("status", @person_active)
-  end
+    birth_date_tax_id_params = %{
+      "birth_date" => birth_date,
+      "tax_id" => tax_id,
+      "status" => @person_active
+    }
 
-  defp put_search_params(map, _key, nil), do: map
-  defp put_search_params(map, key, value), do: Map.put(map, key, value)
+    search_params =
+      cond do
+        age < 14 && tax_id && birth_date ->
+          [
+            birth_date_tax_id_params,
+            child_document_search_params(person_data)
+          ]
+
+        age < 14 ->
+          [child_document_search_params(person_data)]
+
+        age > 14 && tax_id && birth_date ->
+          [birth_date_tax_id_params]
+
+        age > 14 ->
+          [adult_document_search_params(person_data)]
+      end
+
+    {:ok, search_params}
+  end
 end
