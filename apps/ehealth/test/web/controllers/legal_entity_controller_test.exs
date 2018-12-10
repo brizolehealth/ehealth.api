@@ -118,27 +118,6 @@ defmodule EHealth.Web.LegalEntityControllerTest do
       assert resp["error"]["message"] == "Only legal_entity with type MSP or Pharmacy could be created"
     end
 
-    test "fail to create legal_entity with pharmacy type without licence_number", %{conn: conn} do
-      {_, legal_entity_params} =
-        get_legal_entity_data()
-        |> Map.merge(%{"type" => @legal_entity_type_pharmacy})
-        |> pop_in(["medical_service_provider", "licenses", Access.all(), "license_number"])
-
-      legal_entity_params_signed = sign_legal_entity(legal_entity_params)
-      edrpou_signed_content(legal_entity_params, legal_entity_params["edrpou"])
-
-      resp =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> put_req_header("content-length", "7000")
-        |> put_req_header("x-consumer-id", UUID.generate())
-        |> put_req_header("edrpou", legal_entity_params["edrpou"])
-        |> put(legal_entity_path(conn, :create_or_update), legal_entity_params_signed)
-        |> json_response(422)
-
-      assert %{"error" => %{"invalid" => [%{"entry" => "$.medical_service_provider.licenses.0.license_number"}]}} = resp
-    end
-
     test "create legal entity with type pharmacy", %{conn: conn} do
       get_client_type_by_name()
       put_client()

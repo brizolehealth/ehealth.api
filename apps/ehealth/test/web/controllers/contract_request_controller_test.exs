@@ -1377,7 +1377,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       contract_request =
         insert(
           :il,
-          :capitation_contract_request,
+          :contract_request,
           status: @contract_request_status_in_process,
           start_date: Date.add(Date.utc_today(), 10),
           contractor_owner_id: employee.id
@@ -1930,7 +1930,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       user_id = UUID.generate()
       party_user = insert(:prm, :party_user, user_id: user_id)
       legal_entity = insert(:prm, :legal_entity)
-      contract_request = insert(:il, :capitation_contract_request, contractor_legal_entity_id: legal_entity.id)
+      contract_request = insert(:il, :contract_request, contractor_legal_entity_id: legal_entity.id)
 
       conn =
         conn
