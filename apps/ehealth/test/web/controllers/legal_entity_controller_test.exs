@@ -501,8 +501,8 @@ defmodule EHealth.Web.LegalEntityControllerTest do
       |> post(employee_request_path(conn, :approve, employee_request_id))
       |> json_response(200)
 
-      contract = PRMRepo.get(CapitationContract, contract_id)
-      contract2 = PRMRepo.get(CapitationContract, contract_id2)
+      contract = PRMRepo.get(Contract, contract_id)
+      contract2 = PRMRepo.get(Contract, contract_id2)
 
       assert contract.is_suspended
       refute contract2.is_suspended
