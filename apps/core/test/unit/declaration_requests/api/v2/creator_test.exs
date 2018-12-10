@@ -59,6 +59,96 @@ defmodule Core.DeclarationRequests.API.V2.CreatorTest do
     end
   end
 
+  describe "mpi child search" do
+    test "tax_id - found" do
+      expect(MPIMock, :search, fn %{"tax_id" => _}, _ ->
+        {:ok,
+         %{
+           "data" => [%{id: 1}, %{id: 2}]
+         }}
+      end)
+
+      assert {:ok, %{id: 1}} =
+               Creator.mpi_search(%{
+                 "birth_date" => "2016-08-28",
+                 "tax_id" => "0123456789",
+                 "last_name" => "Рюрікович"
+               })
+    end
+
+    test "tax_id - not found" do
+      expect(MPIMock, :search, fn %{"tax_id" => _}, _ ->
+        {:ok,
+         %{
+           "data" => []
+         }}
+      end)
+
+      expect(MPIMock, :search, fn %{"type" => "BIRTH_CERTIFICATE", "digits" => "2511511"}, _ ->
+        {:ok,
+         %{
+           "data" => [%{id: 1}, %{id: 2}]
+         }}
+      end)
+
+      assert {:ok, %{id: 1}} =
+               Creator.mpi_search(%{
+                 "birth_date" => "2016-08-28",
+                 "tax_id" => "0123456789",
+                 "last_name" => "Рюрікович",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                   }
+                 ]
+               })
+    end
+  end
+
+  describe "mpi adult search" do
+    test "tax_id - found" do
+      expect(MPIMock, :search, fn %{"tax_id" => _}, _ ->
+        {:ok,
+         %{
+           "data" => [%{id: 1}, %{id: 2}]
+         }}
+      end)
+
+      assert {:ok, %{id: 1}} =
+               Creator.mpi_search(%{
+                 "birth_date" => "1838-11-25",
+                 "tax_id" => "0123456789",
+                 "last_name" => "Рюрікович"
+               })
+    end
+
+    test "no tax_id" do
+      expect(MPIMock, :search, fn %{"documents" => _}, _ ->
+        {:ok,
+         %{
+           "data" => [%{id: 1}, %{id: 2}]
+         }}
+      end)
+
+      assert {:ok, %{id: 1}} =
+               Creator.mpi_search(%{
+                 "birth_date" => "1838-11-25",
+                 "last_name" => "Рюрікович",
+                 "documents" => [
+                   %{
+                     "type" => "BIRTH_CERTIFICATE",
+                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                   },
+                   %{
+                     "type" => "PASSPORT",
+                     "number" => "18381125-01234"
+                   }
+                 ]
+               })
+    end
+  end
+
   describe "mpi persons search" do
     test "few mpi persons" do
       expect(MPIMock, :search, fn _, _ ->

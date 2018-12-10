@@ -7,8 +7,8 @@ defmodule Core.Cabinet.API do
   alias Core.Bamboo.Emails.Sender
   alias Core.Cabinet.Requests.Registration
   alias Core.Cabinet.Requests.UserSearch
-  alias Core.DeclarationRequests.API.V2.Persons
   alias Core.DeclarationRequests.API.V2.MpiSearch
+  alias Core.DeclarationRequests.API.V2.Persons
   alias Core.Guardian
   alias Core.Man.Templates.EmailVerification
   alias Core.Persons.V2.Validator, as: PersonsValidator
