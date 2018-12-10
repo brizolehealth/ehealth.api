@@ -1922,52 +1922,6 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       assert json_response(conn, 403)
     end
 
-    test "invalid user drfo in DS", %{conn: conn} do
-      expect(MithrilMock, :get_user_roles, fn _, _, _ ->
-        {:ok, %{"data" => [%{"role_name" => "OWNER"}]}}
-      end)
-
-      user_id = UUID.generate()
-      party_user = insert(:prm, :party_user, user_id: user_id)
-      legal_entity = insert(:prm, :legal_entity)
-      contract_request = insert(:il, :contract_request, contractor_legal_entity_id: legal_entity.id)
-
-      conn =
-        conn
-        |> put_consumer_id_header(user_id)
-        |> put_client_id_header(legal_entity.id)
-        |> put_req_header("drfo", legal_entity.edrpou)
-
-      data = %{
-        "id" => contract_request.id,
-        "next_status" => "APPROVED",
-        "contractor_legal_entity" => %{
-          "id" => contract_request.contractor_legal_entity_id,
-          "name" => legal_entity.name,
-          "edrpou" => legal_entity.edrpou
-        },
-        "text" => "something"
-      }
-
-      drfo_signed_content(data, legal_entity.edrpou, party_user.party.last_name)
-
-      resp =
-        conn
-        |> patch(contract_request_path(conn, :approve, contract_request.id), %{
-          "signed_content" => data |> Jason.encode!() |> Base.encode64(),
-          "signed_content_encoding" => "base64"
-        })
-        |> json_response(422)
-
-      assert %{
-               "invalid" => [
-                 %{"entry_type" => "request", "rules" => [%{"rule" => "json"}]}
-               ],
-               "message" => "Does not match the signer drfo",
-               "type" => "request_malformed"
-             } = resp["error"]
-    end
-
     test "no contract_request found", %{conn: conn} do
       expect(MithrilMock, :get_user_roles, fn _, _, _ ->
         {:ok, %{"data" => [%{"role_name" => "NHS ADMIN SIGNER"}]}}

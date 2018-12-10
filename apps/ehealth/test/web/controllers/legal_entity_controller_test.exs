@@ -457,10 +457,9 @@ defmodule EHealth.Web.LegalEntityControllerTest do
       legal_entity = insert(:prm, :legal_entity)
       insert(:prm, :employee, employee_type: Employee.type(:owner), legal_entity_id: legal_entity.id)
 
-      %{id: contract_id} =
-        insert(:prm, :capitation_contract, contractor_legal_entity: legal_entity, is_suspended: false)
+      %{id: contract_id} = insert(:prm, :contract, contractor_legal_entity: legal_entity, is_suspended: false)
 
-      %{id: contract_id2} = insert(:prm, :capitation_contract, is_suspended: false)
+      %{id: contract_id2} = insert(:prm, :contract, is_suspended: false)
 
       owner = %{
         "birth_date" => "1988-08-19",
