@@ -589,7 +589,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       |> put_client_id_header(legal_entity.id)
       |> put_consumer_id_header(party_user.user_id)
       |> put_req_header("drfo", legal_entity.edrpou)
-      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+      |> post(contract_request_path(conn, :create, UUID.generate()), %{
         "signed_content" => params |> Jason.encode!() |> Base.encode64(),
         "signed_content_encoding" => "base64"
       })
@@ -762,7 +762,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_client_id_header(legal_entity.id)
         |> put_consumer_id_header(user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
-        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        |> post(contract_request_path(conn, :create, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
@@ -826,7 +826,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
         |> put_client_id_header(legal_entity.id)
         |> put_consumer_id_header(user_id)
         |> put_req_header("drfo", legal_entity.edrpou)
-        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        |> post(contract_request_path(conn, :create, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
@@ -892,7 +892,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       |> put_client_id_header(legal_entity.id)
       |> put_consumer_id_header(user_id)
       |> put_req_header("drfo", legal_entity.edrpou)
-      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+      |> post(contract_request_path(conn, :create, UUID.generate()), %{
         "signed_content" => params |> Jason.encode!() |> Base.encode64(),
         "signed_content_encoding" => "base64"
       })
@@ -942,7 +942,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       resp =
         conn
-        |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+        |> post(contract_request_path(conn, :create, UUID.generate()), %{
           "signed_content" => params |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
@@ -991,7 +991,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
       |> put_client_id_header(legal_entity.id)
       |> put_consumer_id_header(user_id)
       |> put_req_header("drfo", legal_entity.edrpou)
-      |> post(contract_request_path(conn, :create, @capitation, UUID.generate()), %{
+      |> post(contract_request_path(conn, :create, UUID.generate()), %{
         "signed_content" => params |> Jason.encode!() |> Base.encode64(),
         "signed_content_encoding" => "base64"
       })
@@ -1953,7 +1953,7 @@ defmodule EHealth.Web.ContractRequestControllerTest do
 
       resp =
         conn
-        |> patch(contract_request_path(conn, :approve, @capitation, contract_request.id), %{
+        |> patch(contract_request_path(conn, :approve, contract_request.id), %{
           "signed_content" => data |> Jason.encode!() |> Base.encode64(),
           "signed_content_encoding" => "base64"
         })
