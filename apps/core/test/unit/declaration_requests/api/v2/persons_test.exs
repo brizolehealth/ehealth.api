@@ -116,7 +116,7 @@ defmodule Core.DeclarationRequests.API.V2.PersonsTest do
                 %{
                   "documents" => [
                     %{
-                      "number" => "steblivskym rou mvu v cherkaskii obl. nomer 2511 v 5/11",
+                      "number" => "СТЕБЛІВСЬКИМ РОУ МВУ В ЧЕРКАСЬКІЙ ОБЛ. НОМЕР 2511 В 5/11",
                       "status" => "active",
                       "type" => "BIRTH_CERTIFICATE"
                     },
@@ -135,7 +135,7 @@ defmodule Core.DeclarationRequests.API.V2.PersonsTest do
                  "documents" => [
                    %{
                      "type" => "BIRTH_CERTIFICATE",
-                     "number" => "Стеблівським РОУ МВУ в Черкаській обл. НОМЕР 2511 в 5/11"
+                     "number" => "Стеблівcьким РOУ МВУ в Черкаській обл. HOMEP 2511 в 5/11"
                    },
                    %{
                      "type" => "PASSPORT",

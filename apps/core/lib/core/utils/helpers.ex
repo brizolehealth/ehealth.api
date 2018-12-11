@@ -16,4 +16,31 @@ defmodule Core.Utils.Helpers do
     |> String.replace("_id", "")
     |> String.capitalize()
   end
+
+  def convert_cap_letters_lat_to_cyr(input_string) do
+    letter_mapping = %{
+      "A" => "А",
+      "B" => "В",
+      "C" => "С",
+      "E" => "Е",
+      "H" => "Н",
+      "I" => "І",
+      "K" => "К",
+      "M" => "М",
+      "O" => "О",
+      "P" => "Р",
+      "T" => "Т",
+      "X" => "Х"
+    }
+
+    input_string
+    |> String.graphemes()
+    |> Enum.reduce(fn c, acc ->
+      if letter_mapping[c] == nil do
+        acc <> c
+      else
+        acc <> letter_mapping[c]
+      end
+    end)
+  end
 end

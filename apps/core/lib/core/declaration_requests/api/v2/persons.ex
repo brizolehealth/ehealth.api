@@ -1,6 +1,8 @@
 defmodule Core.DeclarationRequests.API.V2.Persons do
   @moduledoc false
 
+  alias Core.Utils.Helpers
+
   @person_active "active"
   def child_document_search_params(person) do
     number =
@@ -32,7 +34,11 @@ defmodule Core.DeclarationRequests.API.V2.Persons do
       |> Map.get("documents", [])
       |> Enum.map(fn
         %{"type" => type, "number" => number} ->
-          %{"type" => type, "number" => number |> String.downcase() |> Translit.translit(), "status" => @person_active}
+          %{
+            "type" => type,
+            "number" => number |> String.upcase() |> Helpers.convert_cap_letters_lat_to_cyr(),
+            "status" => @person_active
+          }
       end)
 
     %{"documents" => documents, "status" => @person_active}
