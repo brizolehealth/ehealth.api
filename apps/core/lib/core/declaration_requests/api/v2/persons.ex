@@ -18,7 +18,7 @@ defmodule Core.DeclarationRequests.API.V2.Persons do
         {:ok,
          %{
            "type" => "BIRTH_CERTIFICATE",
-           "digits" => Regex.replace(~r/[^0-9]/iu, number, ""),
+           "digits" => digits,
            "birth_date" => person["birth_date"],
            "last_name" => person["last_name"] |> String.replace(~r{\s+}, "") |> String.downcase(),
            "status" => @person_active
