@@ -250,7 +250,7 @@ config :core, :employee_specialities_types,
 config :core, :medication_request_request,
   expire_in_minutes: {:system, "MEDICATION_REQUEST_REQUEST_EXPIRATION", 30},
   otp_code_length: {:system, "MEDICATION_REQUEST_REQUEST_OTP_CODE_LENGTH", 4},
-  delay_input: {:system, "MEDICATION_REQUEST_REQUEST_DELAY_INPUT", 7}
+  delay_input: {:system, "MEDICATION_REQUEST_REQUEST_DELAY_INPUT", 3}
 
 config :core, :medication_request,
   sign_template_sms:

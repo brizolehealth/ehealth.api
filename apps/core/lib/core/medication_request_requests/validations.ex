@@ -323,25 +323,29 @@ defmodule Core.MedicationRequestRequest.Validations do
     medication_request_request_delay_input = Confex.fetch_env!(:core, :medication_request_request)[:delay_input]
 
     boundary_date =
-      Timex.today()
-      |> Timex.shift(days: -medication_request_request_delay_input)
-      |> to_string
+      Date.utc_today()
+      |> Date.add(-medication_request_request_delay_input)
+      |> Date.to_string()
 
     cond do
-      attrs["ended_at"] < attrs["started_at"] ->
+      compare_dates(attrs["ended_at"], attrs["started_at"]) == :lt ->
         {:invalid_state, {:ended_at, "Ended date must be >= Started date!"}}
 
-      attrs["started_at"] < attrs["created_at"] ->
+      compare_dates(attrs["started_at"], attrs["created_at"]) == :lt ->
         {:invalid_state, {:started_at, "Started date must be >= Created date!"}}
 
-      attrs["started_at"] < to_string(Timex.today()) ->
+      compare_dates(attrs["started_at"], to_string(Date.utc_today())) == :lt ->
         {:invalid_state, {:started_at, "Started date must be >= Current date!"}}
 
-      # boundary_date <= attrs["created_at"] ->
-      #   {:invalid_state, {:created_at, "Create date must be >= Current date - MRR delay input!"}}
+      compare_dates(attrs["created_at"], boundary_date) == :lt ->
+        {:invalid_state, {:created_at, "Create date must be >= Current date - MRR delay input!"}}
 
       true ->
         {:ok, nil}
     end
+  end
+
+  defp compare_dates(date1, date2) when is_binary(date1) and is_binary(date2) do
+    Date.compare(Date.from_iso8601!(date1), Date.from_iso8601!(date2))
   end
 end
