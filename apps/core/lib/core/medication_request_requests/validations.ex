@@ -1,10 +1,14 @@
 defmodule Core.MedicationRequestRequest.Validations do
   @moduledoc false
 
+  import Ecto.Changeset
+
   alias Core.Declarations.API, as: DeclarationsAPI
   alias Core.Dictionaries
   alias Core.Employees
   alias Core.Employees.Employee
+  alias Core.GlobalParameters
+  alias Core.MedicationRequestRequest.EmbeddedData
   alias Core.MedicationRequestRequest.Renderer, as: MedicationRequestRequestRenderer
   alias Core.Medications
   alias Core.Validators.Content, as: ContentValidator
@@ -12,6 +16,7 @@ defmodule Core.MedicationRequestRequest.Validations do
   alias Core.Validators.Signature, as: SignatureValidator
 
   @rpc_worker Application.get_env(:core, :rpc_worker)
+  @intent_order EmbeddedData.intent(:order)
 
   def validate_create_schema(:generic, params) do
     JsonSchema.validate(:medication_request_request_create_generic, params)
@@ -222,6 +227,62 @@ defmodule Core.MedicationRequestRequest.Validations do
     end)
   end
 
+  def validate_dispense_valid_from(operation, %{"intent" => @intent_order} = attrs) do
+    {:ok,
+     Map.put(
+       operation,
+       :changeset,
+       put_change(operation.changeset, :dispense_valid_from, Date.from_iso8601!(attrs["created_at"]))
+     )}
+  end
+
+  def validate_dispense_valid_from(operation, _attrs), do: {:ok, operation}
+
+  def validate_dispense_valid_to(operation, %{"intent" => @intent_order}) do
+    medication_dispense_period =
+      GlobalParameters.get_values()
+      |> Map.get("medication_dispense_period")
+      |> String.to_integer()
+
+    {:ok,
+     Map.put(
+       operation,
+       :changeset,
+       put_change(
+         operation.changeset,
+         :dispense_valid_to,
+         Date.add(operation.changeset.changes.dispense_valid_from, medication_dispense_period)
+       )
+     )}
+  end
+
+  def validate_dispense_valid_to(operation, _attrs), do: {:ok, operation}
+
+  def validate_periods(
+        %{
+          changeset: %{
+            changes: %{
+              started_at: started_at,
+              ended_at: ended_at,
+              dispense_valid_from: dispense_valid_from,
+              dispense_valid_to: dispense_valid_to
+            }
+          }
+        },
+        %{"intent" => @intent_order}
+      ) do
+    treatment_period = Timex.diff(ended_at, started_at, :days)
+    medication_dispense_period = Timex.diff(dispense_valid_to, dispense_valid_from, :days)
+
+    if treatment_period < medication_dispense_period do
+      {:invalid_period, nil}
+    else
+      {:ok, nil}
+    end
+  end
+
+  def validate_periods(_operation, _attrs), do: {:ok, nil}
+
   def decode_sign_content(content, headers) do
     SignatureValidator.validate(
       content["signed_medication_request_request"],
@@ -269,10 +330,10 @@ defmodule Core.MedicationRequestRequest.Validations do
       attrs["started_at"] < to_string(Timex.today()) ->
         {:invalid_state, {:started_at, "Started date must be >= Current date!"}}
 
-      attrs["dispense_valid_from"] < attrs["started_at"] ->
+      !is_nil(attrs["dispense_valid_from"]) and attrs["dispense_valid_from"] < attrs["started_at"] ->
         {:invalid_state, {:dispense_valid_from, "Dispense valid from date must be >= Started date!"}}
 
-      attrs["dispense_valid_to"] < attrs["dispense_valid_from"] ->
+      !is_nil(attrs["dispense_valid_to"]) and attrs["dispense_valid_to"] < attrs["dispense_valid_from"] ->
         {:invalid_state, {:dispense_valid_from, "Dispense valid to date must be >= Dispense valid from date!"}}
 
       true ->

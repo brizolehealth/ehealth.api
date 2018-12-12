@@ -18,6 +18,10 @@ defmodule Core.MedicationRequestRequest.Operation do
     Map.put(operation, :data, Map.put(operation.data, key, map))
   end
 
+  def add_data(%Operation{} = operation, key, %Date{} = value) do
+    Map.put(operation, :data, Map.put(operation.data, key, value))
+  end
+
   def add_data(%Operation{} = operation, key, fun, args) when is_function(fun) when is_list(args) do
     Map.put(operation, :data, Map.put(operation.data, key, apply(fun, [operation] ++ args)))
   end
