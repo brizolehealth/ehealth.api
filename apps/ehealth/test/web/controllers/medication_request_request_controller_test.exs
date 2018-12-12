@@ -1011,7 +1011,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
+        test_request(true)
         |> Map.merge(%{
           "medication_id" => medication_id,
           "intent" => "order"
@@ -1045,7 +1045,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       inactive_pm = insert(:prm, :program_medication, medical_program_id: inactive_mp.id)
 
       test_request =
-        test_request()
+        test_request(true)
         |> Map.merge(%{
           "medication_id" => medication_id,
           "intent" => "order"
@@ -1098,7 +1098,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       pm1 = insert(:prm, :program_medication)
 
       test_request =
-        test_request()
+        test_request(true)
         |> Map.merge(%{
           "medication_id" => medication_id,
           "intent" => "order"
@@ -1138,7 +1138,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
+        test_request(true)
         |> Map.merge(%{
           "intent" => "plan",
           "medication_id" => medication_id
@@ -1166,7 +1166,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
+        test_request(true)
         |> Map.merge(%{
           "medication_id" => medication_id,
           "intent" => "order"
@@ -1450,9 +1450,26 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     {dosage_id, pm}
   end
 
-  defp test_request do
-    "../core/test/data/medication_request_request/medication_request_request.json"
-    |> File.read!()
-    |> Jason.decode!()
+  defp test_request(use_dispense_dates \\ false) do
+    day = Timex.today()
+
+    request =
+      "../core/test/data/medication_request_request/medication_request_request.json"
+      |> File.read!()
+      |> Jason.decode!()
+      |> Map.merge(%{
+        "created_at" => day |> to_string(),
+        "started_at" => day |> to_string(),
+        "ended_at" => day |> Timex.shift(days: 30) |> to_string()
+      })
+
+    if use_dispense_dates do
+      Map.merge(request, %{
+        "dispense_valid_from" => day |> Timex.shift(days: 3) |> to_string(),
+        "dispense_valid_to" => day |> Timex.shift(days: 33) |> to_string()
+      })
+    else
+      request
+    end
   end
 end

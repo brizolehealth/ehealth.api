@@ -320,6 +320,13 @@ defmodule Core.MedicationRequestRequest.Validations do
   end
 
   def validate_dates(attrs) do
+    medication_request_request_delay_input = Confex.fetch_env!(:core, :medication_request_request)[:delay_input]
+
+    boundary_date =
+      Timex.today()
+      |> Timex.shift(days: -medication_request_request_delay_input)
+      |> to_string
+
     cond do
       attrs["ended_at"] < attrs["started_at"] ->
         {:invalid_state, {:ended_at, "Ended date must be >= Started date!"}}
@@ -330,11 +337,8 @@ defmodule Core.MedicationRequestRequest.Validations do
       attrs["started_at"] < to_string(Timex.today()) ->
         {:invalid_state, {:started_at, "Started date must be >= Current date!"}}
 
-      !is_nil(attrs["dispense_valid_from"]) and attrs["dispense_valid_from"] < attrs["started_at"] ->
-        {:invalid_state, {:dispense_valid_from, "Dispense valid from date must be >= Started date!"}}
-
-      !is_nil(attrs["dispense_valid_to"]) and attrs["dispense_valid_to"] < attrs["dispense_valid_from"] ->
-        {:invalid_state, {:dispense_valid_from, "Dispense valid to date must be >= Dispense valid from date!"}}
+      # boundary_date <= attrs["created_at"] ->
+      #   {:invalid_state, {:created_at, "Create date must be >= Current date - MRR delay input!"}}
 
       true ->
         {:ok, nil}
