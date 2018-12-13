@@ -237,7 +237,7 @@ defmodule Core.MedicationRequestRequest.OperationHelpers do
 
   defp add_changeset_error({:invalid_period, _}, operation) do
     Operation.call_changeset(operation, &add_error/4, [
-      :data,
+      :ended_at,
       "Treatment period cannot be less than MR expiration period",
       [validation: :invalid]
     ])
