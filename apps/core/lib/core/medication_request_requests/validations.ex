@@ -10,12 +10,14 @@ defmodule Core.MedicationRequestRequest.Validations do
   alias Core.GlobalParameters
   alias Core.MedicationRequestRequest.EmbeddedData
   alias Core.MedicationRequestRequest.Renderer, as: MedicationRequestRequestRenderer
+  alias Core.MedicationRequests.MedicationRequest
   alias Core.Medications
   alias Core.Validators.Content, as: ContentValidator
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature, as: SignatureValidator
 
   @rpc_worker Application.get_env(:core, :rpc_worker)
+  @ops_api Application.get_env(:core, :api_resolvers)[:ops]
   @intent_order EmbeddedData.intent(:order)
 
   def validate_create_schema(:generic, params) do
@@ -258,7 +260,7 @@ defmodule Core.MedicationRequestRequest.Validations do
 
   def validate_dispense_valid_to(operation, _attrs), do: {:ok, operation}
 
-  def validate_periods(
+  def validate_treatment_period(
         %{
           changeset: %{
             changes: %{
@@ -281,7 +283,72 @@ defmodule Core.MedicationRequestRequest.Validations do
     end
   end
 
-  def validate_periods(_operation, _attrs), do: {:ok, nil}
+  def validate_treatment_period(_operation, _attrs), do: {:ok, nil}
+
+  def validate_existing_medication_requests(%{"intent" => @intent_order} = data) do
+    search_params = %{
+      "person_id" => data["person_id"],
+      "medication_id" => data["medication_id"],
+      "medical_program_id" => data["medical_program_id"],
+      "status" => [MedicationRequest.status(:active), MedicationRequest.status(:completed)]
+    }
+
+    with {:ok, %{"data" => medication_requests}} <- @ops_api.get_medication_requests(search_params, []) do
+      if medication_requests == [] do
+        {:ok, nil}
+      else
+        do_validate_existing_medication_requests(medication_requests, Date.from_iso8601!(data["created_at"]))
+      end
+    end
+  end
+
+  def validate_existing_medication_requests(_data), do: {:ok, nil}
+
+  defp do_validate_existing_medication_requests(medication_requests, created_at) do
+    config = Confex.fetch_env!(:core, :medication_request_request)
+    mrr_standard_duration = config[:standard_duration]
+    min_mrr_renew_days = config[:min_renew_days]
+    max_mrr_renew_days = config[:max_renew_days]
+
+    last_mr =
+      medication_requests
+      |> Enum.sort_by(
+        fn medication_request ->
+          medication_request
+          |> Map.get("ended_at")
+          |> Date.from_iso8601!()
+        end,
+        &(Date.compare(&1, &2) in [:gt, :eq])
+      )
+      |> hd()
+
+    last_mr_started_at = Date.from_iso8601!(last_mr["started_at"])
+    last_mr_ended_at = Date.from_iso8601!(last_mr["ended_at"])
+    comparison_period = Date.diff(last_mr_ended_at, last_mr_started_at)
+
+    with {:greater_than_today, true} <-
+           {:greater_than_today, Date.compare(last_mr_ended_at, Date.utc_today()) in [:gt, :eq]},
+         {:greater_than_mrr_standard_duration, true} <-
+           {:greater_than_mrr_standard_duration, comparison_period >= mrr_standard_duration} do
+      if Date.compare(created_at, Date.add(last_mr_ended_at, -max_mrr_renew_days)) in [:gt, :eq] and
+           Date.compare(Date.add(last_mr_ended_at, -max_mrr_renew_days), Date.utc_today()) in [:gt, :eq] do
+        {:ok, nil}
+      else
+        {:invalid_existing_medication_requests, nil}
+      end
+    else
+      {:greater_than_today, false} ->
+        {:ok, nil}
+
+      {:greater_than_mrr_standard_duration, false} ->
+        if Date.compare(created_at, Date.add(last_mr_ended_at, -min_mrr_renew_days)) in [:gt, :eq] and
+             Date.compare(Date.add(last_mr_ended_at, -min_mrr_renew_days), Date.utc_today()) in [:gt, :eq] do
+          {:ok, nil}
+        else
+          {:invalid_existing_medication_requests, nil}
+        end
+    end
+  end
 
   def decode_sign_content(content, headers) do
     SignatureValidator.validate(
