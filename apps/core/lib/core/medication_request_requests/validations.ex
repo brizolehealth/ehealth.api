@@ -285,6 +285,8 @@ defmodule Core.MedicationRequestRequest.Validations do
 
   def validate_treatment_period(_operation, _attrs), do: {:ok, nil}
 
+  def validate_existing_medication_requests(%{"medical_program_id" => nil}), do: {:ok, nil}
+
   def validate_existing_medication_requests(%{"intent" => @intent_order} = data) do
     search_params = %{
       "person_id" => data["person_id"],

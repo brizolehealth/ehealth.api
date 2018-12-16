@@ -40,9 +40,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     {medication_id, pm} = create_medications_structure()
 
     test_request =
-      test_request()
-      |> Map.put("medication_id", medication_id)
-      |> Map.put("medical_program_id", pm.medical_program_id)
+      test_request(%{
+        "medication_id" => medication_id,
+        "medical_program_id" => pm.medical_program_id
+      })
       |> Map.merge(params)
 
     test_request =
@@ -357,9 +358,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       assert %{"id" => id} =
                conn
@@ -390,7 +392,11 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       resp =
         conn
         |> post(medication_request_request_path(conn, :create),
-          medication_request_request: test_request(true)
+          medication_request_request:
+            test_request(%{
+              "dispense_valid_from" => Date.utc_today() |> Date.to_string(),
+              "dispense_valid_to" => Date.utc_today() |> Date.to_string()
+            })
         )
         |> json_response(422)
 
@@ -437,7 +443,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
         |> String.to_integer()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => created_at,
@@ -479,7 +485,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
         |> String.to_integer()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => Date.utc_today() |> to_string(),
@@ -519,8 +525,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, _} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "intent" => "plan"
         })
@@ -547,8 +552,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id
         })
@@ -591,9 +595,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
         {:error, %{"error" => %{"type" => "not_found"}, "meta" => %{"code" => 404}}}
       end)
 
-      test_request =
-        test_request()
-        |> Map.put("person_id", "585041f5-1272-4bca-8d41-8440eefe7d26")
+      test_request = test_request(%{"person_id" => "585041f5-1272-4bca-8d41-8440eefe7d26"})
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -603,9 +605,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     end
 
     test "render errors when employee_id is invalid", %{conn: conn} do
-      test_request =
-        test_request()
-        |> Map.put("employee_id", "585041f5-1272-4bca-8d41-8440eefe7d26")
+      test_request = test_request(%{"employee_id" => "585041f5-1272-4bca-8d41-8440eefe7d26"})
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -617,9 +617,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     test "render errors when division_id is invalid", %{conn: conn} do
       expect_mpi_get_person()
 
-      test_request =
-        test_request()
-        |> Map.put("division_id", "585041f5-1272-4bca-8d41-8440eefe7d26")
+      test_request = test_request(%{"division_id" => "585041f5-1272-4bca-8d41-8440eefe7d26"})
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -638,10 +636,11 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("person_id", "575041f5-1272-4bca-8d41-8440eefe7d26")
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "person_id" => "575041f5-1272-4bca-8d41-8440eefe7d26",
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -664,11 +663,12 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
-        |> Map.put("ended_at", to_string(Timex.shift(Timex.today(), days: 2)))
-        |> Map.put("started_at", to_string(Timex.shift(Timex.today(), days: 3)))
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id,
+          "ended_at" => Timex.today() |> Timex.shift(days: 2) |> to_string(),
+          "started_at" => Timex.today() |> Timex.shift(days: 3) |> to_string()
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -682,11 +682,12 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
-        |> Map.put("started_at", to_string(Timex.shift(Timex.today(), days: 2)))
-        |> Map.put("created_at", to_string(Timex.shift(Timex.today(), days: 3)))
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id,
+          "started_at" => Timex.today() |> Timex.shift(days: 2) |> to_string(),
+          "created_at" => Timex.today() |> Timex.shift(days: 3) |> to_string()
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -700,10 +701,11 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
-        |> Map.put("started_at", to_string(Timex.shift(Timex.today(), days: -2)))
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id,
+          "started_at" => Timex.today() |> Timex.shift(days: -2) |> to_string()
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -715,14 +717,16 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     test "render errors when medication doesn't exists", %{conn: conn} do
       expect_ops_get_declarations()
       expect_mpi_get_person()
+      expect_ops_get_medication_requests([])
 
       {_, pm} = create_medications_structure()
       {medication_id1, _} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id1)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id1,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -743,14 +747,16 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     test "render errors when medication_qty is invalid", %{conn: conn} do
       expect_ops_get_declarations()
       expect_mpi_get_person()
+      expect_ops_get_medication_requests([])
 
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medication_qty", 7)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medication_qty" => 7,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -789,10 +795,11 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       insert(:prm, :ingredient_medication, parent_id: med_id1, medication_child_id: medication_id)
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medication_qty", 5)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medication_qty" => 5,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -805,9 +812,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, _} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", Ecto.UUID.generate())
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => Ecto.UUID.generate()
+        })
 
       conn = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -818,9 +826,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
 
     test "render errors when request ORDER data is invalid", %{conn: conn} do
       test_request =
-        test_request()
-        |> Map.drop(~w(medical_program_id category))
-        |> Map.merge(%{
+        test_request(%{
           "intent" => "order",
           "medication_id" => UUID.generate(),
           "context" => %{
@@ -835,6 +841,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
             }
           }
         })
+        |> Map.drop(~w(medical_program_id category))
 
       resp =
         conn
@@ -884,9 +891,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
 
     test "render errors when request PLAN data is invalid", %{conn: conn} do
       test_request =
-        test_request()
-        |> Map.drop(~w(medical_program_id category))
-        |> Map.merge(%{
+        test_request(%{
           "intent" => "plan",
           "medication_id" => UUID.generate(),
           "context" => %{
@@ -901,6 +906,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
             }
           }
         })
+        |> Map.drop(~w(medical_program_id category))
 
       resp =
         conn
@@ -939,8 +945,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
 
     test "render errors when context coding type is invalid", %{conn: conn} do
       test_request =
-        test_request()
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => UUID.generate(),
           "medical_program_id" => UUID.generate(),
           "context" => %{
@@ -991,9 +996,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       resp =
         conn
@@ -1027,9 +1033,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       resp =
         conn
@@ -1063,9 +1070,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       dosage_instruction = Map.get(test_request, "dosage_instruction")
       dosage_instruction_item = hd(dosage_instruction)
@@ -1104,9 +1112,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       dosage_instruction = Map.get(test_request, "dosage_instruction")
 
@@ -1249,7 +1258,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => created_at |> Date.to_string(),
@@ -1337,7 +1346,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => created_at |> Date.to_string(),
@@ -1389,7 +1398,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => created_at |> Date.to_string(),
@@ -1477,7 +1486,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request_params(%{
+        test_request(%{
           "medication_id" => medication_id,
           "medical_program_id" => pm.medical_program_id,
           "created_at" => created_at |> Date.to_string(),
@@ -1507,8 +1516,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request(true)
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "intent" => "order"
         })
@@ -1542,8 +1550,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       inactive_pm = insert(:prm, :program_medication, medical_program_id: inactive_mp.id)
 
       test_request =
-        test_request(true)
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "intent" => "order"
         })
@@ -1600,8 +1607,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       pm1 = insert(:prm, :program_medication)
 
       test_request =
-        test_request(true)
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "intent" => "order"
         })
@@ -1624,9 +1630,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     end
 
     test "render error when data is invalid", %{conn: conn} do
-      test_request =
-        test_request()
-        |> Map.put("person_id", "")
+      test_request = test_request(%{"person_id" => ""})
 
       assert conn
              |> post(medication_request_request_path(conn, :prequalify), %{
@@ -1640,8 +1644,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request(true)
-        |> Map.merge(%{
+        test_request(%{
           "intent" => "plan",
           "medication_id" => medication_id
         })
@@ -1669,8 +1672,7 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request(true)
-        |> Map.merge(%{
+        test_request(%{
           "medication_id" => medication_id,
           "intent" => "order"
         })
@@ -1693,9 +1695,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn1 = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -1724,9 +1727,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn1 = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -1773,9 +1777,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn1 = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -1823,9 +1828,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn1 = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -1864,9 +1870,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       conn1 = post(conn, medication_request_request_path(conn, :create), medication_request_request: test_request)
 
@@ -1899,9 +1906,10 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       {medication_id, pm} = create_medications_structure()
 
       test_request =
-        test_request()
-        |> Map.put("medication_id", medication_id)
-        |> Map.put("medical_program_id", pm.medical_program_id)
+        test_request(%{
+          "medication_id" => medication_id,
+          "medical_program_id" => pm.medical_program_id
+        })
 
       expect_encounter_status("finished")
 
@@ -2001,33 +2009,22 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
     {dosage_id, pm}
   end
 
-  defp test_request(use_dispense_dates \\ false) do
-    day = Timex.today()
+  defp test_request(params) do
+    medication_dispense_period =
+      GlobalParameters.get_values()
+      |> Map.get("medication_dispense_period")
+      |> String.to_integer()
 
-    request =
-      "../core/test/data/medication_request_request/medication_request_request.json"
-      |> File.read!()
-      |> Jason.decode!()
-      |> Map.merge(%{
-        "created_at" => day |> to_string(),
-        "started_at" => day |> to_string(),
-        "ended_at" => day |> Timex.shift(days: 30) |> to_string()
-      })
+    day = Date.utc_today()
 
-    if use_dispense_dates do
-      Map.merge(request, %{
-        "dispense_valid_from" => day |> Timex.shift(days: 3) |> to_string(),
-        "dispense_valid_to" => day |> Timex.shift(days: 33) |> to_string()
-      })
-    else
-      request
-    end
-  end
-
-  defp test_request_params(params) do
     "../core/test/data/medication_request_request/medication_request_request.json"
     |> File.read!()
     |> Jason.decode!()
+    |> Map.merge(%{
+      "created_at" => day |> Date.to_string(),
+      "started_at" => day |> Date.to_string(),
+      "ended_at" => day |> Date.add(medication_dispense_period) |> Date.to_string()
+    })
     |> Map.merge(params)
   end
 end
