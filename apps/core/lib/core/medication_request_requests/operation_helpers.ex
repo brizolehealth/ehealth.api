@@ -86,7 +86,7 @@ defmodule Core.MedicationRequestRequest.OperationHelpers do
   end
 
   def validate_existing_medication_requests(_operation, data) do
-    Validations.validate_existing_medication_requests(data)
+    Validations.validate_existing_medication_requests(data, data["medical_program_id"])
   end
 
   def validate_dates(_operation, data) do

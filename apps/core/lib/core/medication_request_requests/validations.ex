@@ -285,13 +285,13 @@ defmodule Core.MedicationRequestRequest.Validations do
 
   def validate_treatment_period(_operation, _attrs), do: {:ok, nil}
 
-  def validate_existing_medication_requests(%{"medical_program_id" => nil}), do: {:ok, nil}
+  def validate_existing_medication_requests(_data, nil), do: {:ok, nil}
 
-  def validate_existing_medication_requests(%{"intent" => @intent_order} = data) do
+  def validate_existing_medication_requests(%{"intent" => @intent_order} = data, medical_program_id) do
     search_params = %{
       "person_id" => data["person_id"],
       "medication_id" => data["medication_id"],
-      "medical_program_id" => data["medical_program_id"],
+      "medical_program_id" => medical_program_id,
       "status" => [MedicationRequest.status(:active), MedicationRequest.status(:completed)]
     }
 
@@ -304,7 +304,7 @@ defmodule Core.MedicationRequestRequest.Validations do
     end
   end
 
-  def validate_existing_medication_requests(_data), do: {:ok, nil}
+  def validate_existing_medication_requests(_data, _medical_program_id), do: {:ok, nil}
 
   defp do_validate_existing_medication_requests(medication_requests, created_at) do
     config = Confex.fetch_env!(:core, :medication_request_request)

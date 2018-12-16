@@ -1542,7 +1542,6 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       expect_ops_get_declarations()
       expect_mpi_get_person()
       expect_encounter_status("finished")
-      expect_ops_get_medication_requests([])
 
       {medication_id, pm} = create_medications_structure()
 
@@ -1683,6 +1682,314 @@ defmodule EHealth.Web.MedicationRequestRequestControllerTest do
       assert conn
              |> post(medication_request_request_path(conn, :prequalify), data)
              |> json_response(200)
+    end
+
+    test "failed when new mrr created_at parameter conflicts with existing mr: mr dispense period => mrr_standart_duration",
+         %{conn: conn} do
+      expect_ops_get_declarations()
+      expect_mpi_get_person()
+      expect_encounter_status("finished")
+
+      config = Confex.fetch_env!(:core, :medication_request_request)
+      mrr_standard_duration = config[:standard_duration]
+      max_mrr_renew_days = config[:max_renew_days]
+
+      current_day = Date.utc_today()
+      created_at = current_day
+      ended_at = Date.add(current_day, max_mrr_renew_days - 1)
+      started_at = Date.add(ended_at, -mrr_standard_duration)
+
+      medication_dispense_period =
+        GlobalParameters.get_values()
+        |> Map.get("medication_dispense_period")
+        |> String.to_integer()
+
+      expect_ops_get_medication_requests([
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 15)),
+          ended_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 5))
+        },
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 10)),
+          ended_at: Date.add(Date.utc_today(), -mrr_standard_duration)
+        },
+        %{
+          started_at: started_at,
+          ended_at: ended_at
+        }
+      ])
+
+      {medication_id, pm} = create_medications_structure()
+
+      test_request =
+        test_request(%{
+          "medication_id" => medication_id,
+          "created_at" => created_at |> Date.to_string(),
+          "started_at" => created_at |> Date.to_string(),
+          "ended_at" => created_at |> Date.add(medication_dispense_period) |> Date.to_string()
+        })
+        |> Map.delete("medical_program_id")
+
+      data = %{medication_request_request: test_request, programs: [%{id: pm.medical_program_id}]}
+
+      resp =
+        conn
+        |> post(medication_request_request_path(conn, :prequalify), data)
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.programs[0].id",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" =>
+                         "It's to early to create new medication request for such innm_dosage and medical_program_id",
+                       "params" => [],
+                       "rule" => "invalid"
+                     }
+                   ]
+                 }
+               ]
+             } = resp["error"]
+    end
+
+    test "success when new mrr created_at parameter does not conflict with existing mr: mr dispense period => mrr_standart_duration",
+         %{conn: conn} do
+      expect_ops_get_declarations()
+      expect_mpi_get_person()
+      expect_encounter_status("finished")
+
+      current_config = Application.get_env(:core, :medication_request_request)
+
+      on_exit(fn ->
+        Application.put_env(:core, :medication_request_request, current_config)
+      end)
+
+      Application.put_env(
+        :core,
+        :medication_request_request,
+        expire_in_minutes: current_config[:expire_in_minutes],
+        otp_code_length: current_config[:otp_code_length],
+        delay_input: current_config[:delay_input],
+        min_renew_days: current_config[:min_renew_days],
+        standard_duration: 3,
+        max_renew_days: 2
+      )
+
+      config = Application.get_env(:core, :medication_request_request)
+      mrr_standard_duration = config[:standard_duration]
+      max_mrr_renew_days = config[:max_renew_days]
+
+      current_day = Date.utc_today()
+      created_at = current_day
+      ended_at = Date.add(current_day, max_mrr_renew_days)
+      started_at = Date.add(ended_at, -mrr_standard_duration)
+
+      medication_dispense_period =
+        GlobalParameters.get_values()
+        |> Map.get("medication_dispense_period")
+        |> String.to_integer()
+
+      expect_ops_get_medication_requests([
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 15)),
+          ended_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 5))
+        },
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 10)),
+          ended_at: Date.add(Date.utc_today(), -mrr_standard_duration)
+        },
+        %{
+          started_at: started_at,
+          ended_at: ended_at
+        }
+      ])
+
+      expect(OPSMock, :get_prequalify_medication_requests, fn _params, _headers ->
+        {:ok, %{"data" => []}}
+      end)
+
+      {medication_id, pm} = create_medications_structure()
+
+      test_request =
+        test_request(%{
+          "medication_id" => medication_id,
+          "created_at" => created_at |> Date.to_string(),
+          "started_at" => created_at |> Date.to_string(),
+          "ended_at" => created_at |> Date.add(medication_dispense_period) |> Date.to_string()
+        })
+        |> Map.delete("medical_program_id")
+
+      data = %{medication_request_request: test_request, programs: [%{id: pm.medical_program_id}]}
+
+      schema_path =
+        "../core/specs/json_schemas/medication_request_request/medication_request_request_prequalify_response.json"
+
+      resp =
+        conn
+        |> post(medication_request_request_path(conn, :prequalify), data)
+        |> json_response(200)
+        |> Map.get("data")
+        |> assert_json_schema(schema_path)
+        |> Enum.at(0)
+
+      assert %{"status" => "VALID"} = resp
+    end
+
+    test "failed when new mrr created_at parameter conflicts with existing mr: mr dispense period < mrr_standart_duration",
+         %{conn: conn} do
+      expect_ops_get_declarations()
+      expect_mpi_get_person()
+      expect_encounter_status("finished")
+
+      config = Confex.fetch_env!(:core, :medication_request_request)
+      mrr_standard_duration = config[:standard_duration]
+      min_mrr_renew_days = config[:min_renew_days]
+
+      current_day = Date.utc_today()
+      created_at = current_day
+      ended_at = Date.add(current_day, min_mrr_renew_days - 1)
+      started_at = Date.add(ended_at, 1 - mrr_standard_duration)
+
+      medication_dispense_period =
+        GlobalParameters.get_values()
+        |> Map.get("medication_dispense_period")
+        |> String.to_integer()
+
+      expect_ops_get_medication_requests([
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 15)),
+          ended_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 5))
+        },
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 10)),
+          ended_at: Date.add(Date.utc_today(), -mrr_standard_duration)
+        },
+        %{
+          started_at: started_at,
+          ended_at: ended_at
+        }
+      ])
+
+      {medication_id, pm} = create_medications_structure()
+
+      test_request =
+        test_request(%{
+          "medication_id" => medication_id,
+          "created_at" => created_at |> Date.to_string(),
+          "started_at" => created_at |> Date.to_string(),
+          "ended_at" => created_at |> Date.add(medication_dispense_period) |> Date.to_string()
+        })
+        |> Map.delete("medical_program_id")
+
+      data = %{medication_request_request: test_request, programs: [%{id: pm.medical_program_id}]}
+
+      resp =
+        conn
+        |> post(medication_request_request_path(conn, :prequalify), data)
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.programs[0].id",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" =>
+                         "It's to early to create new medication request for such innm_dosage and medical_program_id",
+                       "params" => [],
+                       "rule" => "invalid"
+                     }
+                   ]
+                 }
+               ]
+             } = resp["error"]
+    end
+
+    test "success when new mrr created_at parameter does not conflict with existing mr: mr dispense period < mrr_standart_duration",
+         %{conn: conn} do
+      expect_ops_get_declarations()
+      expect_mpi_get_person()
+      expect_encounter_status("finished")
+
+      current_config = Application.get_env(:core, :medication_request_request)
+
+      on_exit(fn ->
+        Application.put_env(:core, :medication_request_request, current_config)
+      end)
+
+      Application.put_env(
+        :core,
+        :medication_request_request,
+        expire_in_minutes: current_config[:expire_in_minutes],
+        otp_code_length: current_config[:otp_code_length],
+        delay_input: current_config[:delay_input],
+        max_renew_days: current_config[:max_renew_days],
+        standard_duration: 3,
+        min_renew_days: 2
+      )
+
+      config = Application.get_env(:core, :medication_request_request)
+      mrr_standard_duration = config[:standard_duration]
+      min_mrr_renew_days = config[:min_renew_days]
+
+      current_day = Date.utc_today()
+      created_at = current_day
+      ended_at = Date.add(current_day, min_mrr_renew_days)
+      started_at = Date.add(ended_at, 1 - mrr_standard_duration)
+
+      medication_dispense_period =
+        GlobalParameters.get_values()
+        |> Map.get("medication_dispense_period")
+        |> String.to_integer()
+
+      expect_ops_get_medication_requests([
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 15)),
+          ended_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 5))
+        },
+        %{
+          started_at: Date.add(Date.utc_today(), -(mrr_standard_duration + 10)),
+          ended_at: Date.add(Date.utc_today(), -mrr_standard_duration)
+        },
+        %{
+          started_at: started_at,
+          ended_at: ended_at
+        }
+      ])
+
+      expect(OPSMock, :get_prequalify_medication_requests, fn _params, _headers ->
+        {:ok, %{"data" => []}}
+      end)
+
+      {medication_id, pm} = create_medications_structure()
+
+      test_request =
+        test_request(%{
+          "medication_id" => medication_id,
+          "created_at" => created_at |> Date.to_string(),
+          "started_at" => created_at |> Date.to_string(),
+          "ended_at" => created_at |> Date.add(medication_dispense_period) |> Date.to_string()
+        })
+        |> Map.delete("medical_program_id")
+
+      data = %{medication_request_request: test_request, programs: [%{id: pm.medical_program_id}]}
+
+      schema_path =
+        "../core/specs/json_schemas/medication_request_request/medication_request_request_prequalify_response.json"
+
+      resp =
+        conn
+        |> post(medication_request_request_path(conn, :prequalify), data)
+        |> json_response(200)
+        |> Map.get("data")
+        |> assert_json_schema(schema_path)
+        |> Enum.at(0)
+
+      assert %{"status" => "VALID"} = resp
     end
   end
 

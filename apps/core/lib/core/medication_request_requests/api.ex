@@ -171,7 +171,8 @@ defmodule Core.MedicationRequestRequests do
          :ok <- check_intent(mrr),
          create_operation <- CreateDataOperation.create(mrr, client_id),
          %Ecto.Changeset{valid?: true} <- create_changeset(create_operation, mrr, user_id, client_id),
-         :ok <- validate_medical_programs(attrs) do
+         :ok <- validate_medical_programs(attrs),
+         :ok <- validate_existing_medication_requests(attrs) do
       {:ok, prequalify_programs(mrr, programs)}
     else
       err -> err
@@ -429,6 +430,36 @@ defmodule Core.MedicationRequestRequests do
           %MedicalProgram{is_active: false} ->
             acc ++
               [{%{description: "Medical program is not active", params: [], rule: :invalid}, "$.programs[#{i}].id"}]
+
+          _ ->
+            acc
+        end
+      end)
+
+    if Enum.empty?(errors) do
+      :ok
+    else
+      {:error, errors}
+    end
+  end
+
+  defp validate_existing_medication_requests(%{"medication_request_request" => data, "programs" => programs}) do
+    errors =
+      programs
+      |> Enum.map(fn %{"id" => id} -> Validations.validate_existing_medication_requests(data, id) end)
+      |> Enum.with_index()
+      |> Enum.reduce([], fn {validation_result, i}, acc ->
+        case validation_result do
+          {:invalid_existing_medication_requests, nil} ->
+            acc ++
+              [
+                {%{
+                   description:
+                     "It's to early to create new medication request for such innm_dosage and medical_program_id",
+                   params: [],
+                   rule: :invalid
+                 }, "$.programs[#{i}].id"}
+              ]
 
           _ ->
             acc
